@@ -4,24 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-namespace UL_Processor_V2020
+namespace UL_Processor_V2023
 {
     class Classroom
     {
         public Boolean ubiCleanup = false;
         public Boolean doRecInfo = true;
         public Boolean processData = true;
-        public Boolean useDenoised = false;
         public Boolean reDenoise = false;
-        public Boolean t1Hack = false;
-        public Boolean addActivities = false;
         public String dir = "";
         public String className = "";
         public double grMin = 0;
         public double grMax = 0;
         public double angle = 45;
-        public String folderStructure = "DAY";
-        public String lenaVersion = "SP";
         public String mapById = "LONGID";
         public List<DateTime> classRoomDays = new List<DateTime>();
         public Dictionary<String, Person> personBaseMappings = new Dictionary<string, Person>();
@@ -29,8 +24,7 @@ namespace UL_Processor_V2020
         public int endHour = 16;
         public int endMinute = 0;
         public Dictionary<String, List<String>> filesToMerge = new Dictionary<String, List<string>>();
-        public List<String> activityTypes = new List<String>();
-
+        
 
         public List<String> diagnosisList = new List<string>();
         public List<String> languagesList = new List<string>();
@@ -177,10 +171,6 @@ namespace UL_Processor_V2020
                 Directory.CreateDirectory(dir + "//SYNC//COTALK");
             if (!Directory.Exists(dir + "//SYNC//PAIRACTIVITY"))
                 Directory.CreateDirectory(dir + "//SYNC//PAIRACTIVITY");
-            if (!Directory.Exists(dir + "//SYNC//ACTIVITIES"))
-                Directory.CreateDirectory(dir + "//SYNC//ACTIVITIES");
-            if (!Directory.Exists(dir + "//SYNC//MINACTIVITIES"))
-                Directory.CreateDirectory(dir + "//SYNC//MINACTIVITIES");
 
             if (!Directory.Exists(dir + "//SYNC//PAIRANGLES"))
                 Directory.CreateDirectory(dir + "//SYNC//PAIRANGLES");
@@ -260,52 +250,24 @@ namespace UL_Processor_V2020
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
                 classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
-
-                classRoomDay.readActivityLog(dir);
-
+                 
                 //ONSETS
                 String szOnsetOutputFile = dir + "//SYNC//ONSETS//DAYONSETS_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                 classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile, startHour, endHour, endMinute);//takes only mapping start-end
                 filesToMerge["ONSETS"].Add(szOnsetOutputFile);
-
-                //MINACTIVITIES
-                String szActivityOutputFile = dir + "//SYNC//MINACTIVITIES//DAYMINACTIVITIES_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                classRoomDay.writeActivityLogByMin(szActivityOutputFile);
-                filesToMerge["MINACTIVITIES"].Add(szActivityOutputFile);
-
-                //ACTIVITIES
-                szActivityOutputFile = dir + "//SYNC//ACTIVITIES//DAYACTIVITIES_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                classRoomDay.writeActivityLog(szActivityOutputFile);
-                filesToMerge["ACTIVITIES"].Add(szActivityOutputFile);
-
+                 
                 //GR
                 String sGrOutputFile = dir + "//SYNC//GR//DAYGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                classRoomDay.readUbiLogsAndWriteGrFile(dir, sGrOutputFile, startHour, endHour, useDenoised,t1Hack);
-               
+                classRoomDay.makeGofRFilesAndTimeDict(dir, sGrOutputFile);
+
                 String szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-
-
-
-                /********UNSTRUCTURED********/
-                if (addActivities)
-                {
-                    //activityLogsFinal
-                    classRoomDay.addActivities(dir + "//activityLogsFinal.csv", activityTypes);
-                }
 
 
                 if (all || tenSecs)
                 {
-                    //TENTH OF SECS 
-                    //SET UBI DATA FROM ubiLocations
-                    //if(!useDenoised)
-                    classRoomDay.setTenthOfSecUbi();
-
                     classRoomDay.setTenthOfSecLENA();
-                    // String szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                    szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                     classRoomDay.writeTenthOfSec(szTenthOutputFile);
-
-
                 }
                 if ( all)
                 {
@@ -314,11 +276,11 @@ namespace UL_Processor_V2020
                     //*INTERACTIONS*/
                     String szAngleOutputFile = dir + "//SYNC//PAIRANGLES//DAILY_ANGLES" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                     String szAppOutputFile = dir + "//SYNC//APPROACH//DAILY_APP_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                    Dictionary<String, Pair> pairs = classRoomDay.countInteractions(this.grMin, this.grMax,this.angle, szAngleOutputFile, szAppOutputFile, t1Hack); //; //count interactions but no need to write a file
+                    Dictionary<String, Pair> pairs = classRoomDay.countInteractions(this.grMin, this.grMax,this.angle, szAngleOutputFile, szAppOutputFile); //; //count interactions but no need to write a file
 
                     //*PAIRACTIVITY REPORT*/
                     String szPairActOutputFile = dir + "//SYNC//PAIRACTIVITY//PAIRACTIVITY_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                    classRoomDay.writePairActivityData(pairs, className, szPairActOutputFile, this.diagnosisList, this.languagesList, activityTypes);
+                    classRoomDay.writePairActivityData(pairs, className, szPairActOutputFile, this.diagnosisList, this.languagesList);
                  //   classRoomDay.writePairActivityData(pairs, className, szPairActOutputFile.Replace(".","_ACT."), this.diagnosisList, this.languagesList, activityTypes);
                     
                     filesToMerge["PAIRACTIVITIES"].Add(szPairActOutputFile);
@@ -333,75 +295,12 @@ namespace UL_Processor_V2020
                     
 
                     filesToMerge["SOCIALONSETS"].Add(szSocialOnsetputFile);
-
-                    //sw.WriteLine("Person 1, Person2, Interaction Time, Interaction Millisecond, Interaction, "+ angle+"Interaction, Angle1, Angle2, Leftx,Lefty,Rightx,Righty, Leftx2,Lefty2,Rightx2,Righty2,Type1, Type2, Gender1, Gender2, Diagnosis1, Diagnosis2, WasTalking1, WasTalking2 ");
-
-
-
-                    //classRoomDay.writePairData(pairs);
-                    ////
-                    Boolean stop = true;
                 }
 
             }
 
         }
-         
-        public void processGofRfiles()
-        {
-            foreach (DateTime day in classRoomDays)
-            {
-                ClassroomDay classRoomDay = new ClassroomDay(day);
-                classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
-
-                //GR
-                String sGrOutputFile = dir + "//SYNC//GR//DAYGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                classRoomDay.readUbiLogsAndWriteGrFile(dir, sGrOutputFile, startHour, endHour,false);
-            }
-
-        }
-
-        public void processRaw()
-        {
-            process(false,false);
-
-        }
-        public void processAll()
-        {
-            process(true,true);
-
-        }
-        /*public void processOnsetsGrAndActLogs()  //TO DELETE
-        {
-            filesToMerge.Add("ONSETS", new List<string>());
-            foreach (DateTime day in classRoomDays)
-            {
-                ClassroomDay classroomDay = processDayOnsetsGrAndActLogs(day); 
-            }
-
-        }
-
-        public ClassroomDay processDayOnsetsGrAndActLogs(DateTime day) //TO DELETE
-        {
-            //Dictionary<String, Person> personMappings
-            ClassroomDay classRoomDay = new ClassroomDay(day);
-            classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById);
-            String szOnsetOutputFile = dir + "//SYNC//ONSETS//DAYONSETS_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-
-            //ACTLOGS
-            classRoomDay.readActivityLog(dir);
-
-            //ONSETS
-            classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile,startHour, endHour, endMinute );
-            filesToMerge["ONSETS"].Add(szOnsetOutputFile);
-
-            //GR
-            String sGrOutputFile = dir + "//SYNC//GR//DAYGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-            classRoomDay.readUbiLogs(dir, sGrOutputFile, startHour, endHour);
-
-            //FOR 10THSECS STUFF
-            return classRoomDay;
-        }*/
+          
         public void mergeDayFiles()
         {
             foreach (List<String> files in filesToMerge.Values)
@@ -456,183 +355,5 @@ namespace UL_Processor_V2020
 
         }
     }
-         
-    class ClassroomToDelete
-    {
-        public String dir = "";
-        public String className = "";
-        public double grMin = 0;
-        public double grMax = 0;
-        public String folderStructure = "DAY";
-        public String lenaVersion = "SP";
-        public String mapById = "LONGID";
-        //public Dictionary<DateTime,ClassroomDay> classRoomDays = new Dictionary<DateTime, ClassroomDay>();
-        //public List<DateTime> classRoomDays = new List<DateTime>();
-        public Dictionary<String, Person> personBaseMappings = new Dictionary<string, Person>();
-        public int startHour = 7;
-        public int endHour = 16;
-        public int endMinute = 16;
-
-        public Dictionary<DateTime, ClassroomDay> classRoomDays = new Dictionary<DateTime, ClassroomDay>();
-        public void getPairActLeadsFromFiles()
-        {
-            TextWriter sw = new StreamWriter(dir + "//SYNC//PAIRACTIVITY//PAIRACTIVITY_" + Utilities.szVersion + "_TEMPFORFREEPLAYANALYSIS.CSV");
-            int numOfDays = classRoomDays.Keys.Count;
-            Dictionary<String, String> prevPairLines = new Dictionary<string, string>();
-            Dictionary<String, String> pairLines = new Dictionary<string, string>();
-            foreach (DateTime dayDate in classRoomDays.Keys)
-            {
-                pairLines = new Dictionary<string, string>();
-                String[] szFiles = Directory.GetFiles(dir + "//SYNC//PAIRACTIVITY//");
-                String fileDayPart = Utilities.getDateNoZeroStr(dayDate, "_");
-                String headerLine = "";
-                foreach (String szFile in szFiles)
-                {
-
-                    if (szFile.Contains(fileDayPart) && szFile.Contains(Utilities.szVersion + "."))
-                    {
-                        using (StreamReader sr = new StreamReader(szFile))
-                        {
-                            if (!sr.EndOfStream)
-                            {
-                                if (numOfDays == classRoomDays.Keys.Count)
-                                    headerLine = sr.ReadLine();//12 on
-                                else
-                                    sr.ReadLine();
-                            }
-
-                            if (headerLine != "")
-                            {
-                                sw.WriteLine(headerLine + "," + headerLine.Replace(",", ",Lead_"));
-                                headerLine = "";
-                            }
-                            while ((!sr.EndOfStream))// && lineCount < 10000)
-                            {
-                                String commaLine = sr.ReadLine();
-                                String[] commaLineCols = commaLine.Split(',');
-                                if (commaLineCols.Length > 33)
-                                {
-                                    //String pairKey = commaLineCols[3].Trim() != "" && commaLineCols[4].Trim() != "" ? commaLineCols[3] + "-" + commaLineCols[4] : commaLineCols[1] + "-" + commaLineCols[2];
-                                    String pairKey = commaLineCols[1] + "-" + commaLineCols[2];
-                                    pairLines.Add(pairKey, commaLine);
-                                }
-                            }
-                        }
-
-                        if (prevPairLines.Keys.Count > 0)
-                            getPairActLead(ref sw, prevPairLines, pairLines);
-                        prevPairLines = pairLines;
-
-                        break;
-
-                    }
-
-                }
-
-                numOfDays--;
-            }
-            if (prevPairLines.Keys.Count > 0)
-                getPairActLead(ref sw, prevPairLines, new Dictionary<string, string>());
-
-            sw.Close();
-        }
-
-        public void getPairActLead(ref TextWriter sw, Dictionary<String, String> prevPairLines, Dictionary<String, String> pairLines)
-        {
-            foreach (String szPair in prevPairLines.Keys)
-            {
-                String leadLine = pairLines.ContainsKey(szPair) ? pairLines[szPair] : "";
-
-                sw.WriteLine(prevPairLines[szPair] + "," + leadLine);
-
-            }
-
-        }
-
-        /*public void setBaseMappings()
-        {
-            String mappingBaseFileName = dir + "//MAPPING_" + className + "_BASE.CSV";
-            if (File.Exists(mappingBaseFileName))
-                using (StreamReader sr = new StreamReader(mappingBaseFileName))
-                {
-                    if (!sr.EndOfStream)
-                    {
-                        sr.ReadLine();
-                    }
-
-                    while ((!sr.EndOfStream))// && lineCount < 10000)
-                    {
-                        String commaLine = sr.ReadLine();
-                        String[] line = commaLine.Split(',');
-                        if (line.Length > 16 && line[1] != "")
-                        {
-                            Person person = new Person(commaLine, mapById);//longid
-
-                            if (!personBaseMappings.ContainsKey(person.mapId))
-                            {
-                                personBaseMappings.Add(person.mapId, person);
-                            }
-
-                        }
-                    }
-                }
-        }*/
-        public void setDirs()
-        {
-            dir = dir + className;
-            if (!Directory.Exists(dir + "//SYNC"))
-                Directory.CreateDirectory(dir + "//SYNC");
-            if (!Directory.Exists(dir + "//SYNC//ONSETS"))
-                Directory.CreateDirectory(dir + "//SYNC//ONSETS");
-            if (!Directory.Exists(dir + "//SYNC//GR"))
-                Directory.CreateDirectory(dir + "//SYNC//GR");
-            if (!Directory.Exists(dir + "//SYNC//PAIRACTIVITY"))
-                Directory.CreateDirectory(dir + "//SYNC//PAIRACTIVITY");
-            if (!Directory.Exists(dir + "//SYNC//ACTIVITIES"))
-                Directory.CreateDirectory(dir + "//SYNC//ACTIVITIES");
-            if (!Directory.Exists(dir + "//SYNC//MINACTIVITIES"))
-                Directory.CreateDirectory(dir + "//SYNC//MINACTIVITIES");
-
-        }
-  
         
-        public Dictionary<String, List<String>> filesToMerge = new Dictionary<String, List<string>>();
-        public void mergeDayFiles()
-        {
-            foreach (List<String> files in filesToMerge.Values)
-            {
-                Boolean includeHeader = true;
-                String szNewFileName = "";
-                TextWriter sw = null;
-                foreach (String szfile in files)
-                {
-                    if (szNewFileName == "")
-                    {
-                        String szShortName = Path.GetFileName(szfile);
-                        szNewFileName = szShortName.Substring(0, szShortName.IndexOf("_"));
-                        szShortName = szShortName.Substring(szShortName.IndexOf("_") + 1);
-                        szNewFileName += szShortName.Substring(szShortName.IndexOf("_"));
-                        sw = new StreamWriter(szfile.Replace(Path.GetFileName(szfile), szNewFileName));
-                    }
-
-                    using (StreamReader sr = new StreamReader(szfile))
-                    {
-                        if ((!includeHeader) && (!sr.EndOfStream))
-                        {
-                            sr.ReadLine();
-                        }
-
-                        while ((!sr.EndOfStream))// && lineCount < 10000)
-                        {
-                            String commaLine = sr.ReadLine();
-                            sw.WriteLine(commaLine);
-                        }
-                    }
-                    includeHeader = false;
-                }
-                sw.Close();
-            }
-        }
-
-    }
 }

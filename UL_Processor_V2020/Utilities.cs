@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.IO;
-namespace UL_Processor_V2020
+namespace UL_Processor_V2023
 {
     class Utilities
     {
@@ -126,13 +126,8 @@ namespace UL_Processor_V2020
          
         public static void setVersion(double minGr, double maxGr)
         {
-            szVersion = "GR"+ minGr.ToString().Replace(".","_")+maxGr.ToString().Replace(".", "_")+"_"+getDateStrMMDDYY(DateTime.Now) + "_" + new Random().Next();
-        }
-        public static void setVersion(double minGr, double maxGr, Boolean den,Boolean act)
-        {
             szVersion = "GR" + minGr.ToString().Replace(".", "_") + maxGr.ToString().Replace(".", "_") + "_" + 
-                (den?"DEN_":"")+
-                (act ? "ACT_" : "") +
+                "DEN_"+
                 getDateStrMMDDYY(DateTime.Now) + "_V2" + new Random().Next();
         }
         public static void setVersion()
@@ -307,6 +302,37 @@ namespace UL_Processor_V2020
             sw.Close();
                      
              
+        }
+        public static double getChaomingOrientationFromLR(
+                double pixl,
+                double piyl,
+                double pixr,
+                double piyr)
+        {
+            double piori_chaoming = 0;
+            try
+            {
+                if (
+                pixl != 0 &&
+                piyl != 0 &&
+                pixr != 0 &&
+                piyr != 0)
+                {
+                    double piy = getCenter(piyl, piyr);
+                    double pix = getCenter(pixl, pixr);
+
+                    piori_chaoming = Math.Atan2(piyr - piyl, pixr - pixl) / Math.PI * 180 + 90;
+
+                    piori_chaoming = piori_chaoming > 360 ? piori_chaoming - 360 : piori_chaoming;
+
+
+                }
+            }
+            catch (Exception e)
+            {
+
+            }
+            return piori_chaoming;
         }
     }
 }

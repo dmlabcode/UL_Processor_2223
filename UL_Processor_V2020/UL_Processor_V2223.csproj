@@ -83,7 +83,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Activity.cs" />
     <Compile Include="Classroom.cs" />
     <Compile Include="ClassroomDay.cs" />
     <Compile Include="LenaOnsets.cs" />

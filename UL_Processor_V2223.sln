@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34031.279
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UL_Processor_V2020", "UL_Processor_V2020\UL_Processor_V2020.csproj", "{DBA78ED3-2F6B-4C46-AB3D-9F4AFD6F81C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UL_Processor_V2223", "UL_Processor_V2020\UL_Processor_V2223.csproj", "{DBA78ED3-2F6B-4C46-AB3D-9F4AFD6F81C4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

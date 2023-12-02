@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UL_Processor_V2020
+namespace UL_Processor_V2023
 {
     public class PersonDayInfo
     {
@@ -65,6 +65,50 @@ namespace UL_Processor_V2020
             }
             catch (Exception e)
             {
+
+            }
+        }
+        public PersonDayInfo(String commaLine, String id, DateTime sd, DateTime ed, Dictionary<String, int> columnIndex)
+        {
+            String[] line = commaLine.Split(',');
+            try
+            {
+                mapId = id;
+                lenaId = line[columnIndex["LENA"]].Trim();
+                leftUbi = line[columnIndex["LEFT"]].Trim();
+                rightUbi = line[columnIndex["RIGHT"]].Trim();
+                present = line[columnIndex["STATUS"]].ToUpper() == "PRESENT";
+                status = line[columnIndex["STATUS"]].ToUpper();
+
+                if (present)
+                {
+                    try
+                    {
+                        String[] startTime = line[columnIndex["START"]].Trim().Split(':');
+                        startDate = new DateTime(sd.Year, sd.Month, sd.Day, Convert.ToInt16(startTime[0]), Convert.ToInt16(startTime[1]), 0);
+                    }
+                    catch (Exception e)
+                    {
+                        startDate = sd;
+                        Console.WriteLine(e.Message);
+                    }
+                    try
+                    {
+                        String[] endTime = line[columnIndex["END"]].Trim().Split(':');
+                        endDate = new DateTime(ed.Year, ed.Month, ed.Day, Convert.ToInt16(endTime[0]), Convert.ToInt16(endTime[1]), endDate.Second);
+                        if (endDate.Hour >= 1)
+                            endDate = endDate.AddHours(12);
+                    }
+                    catch (Exception e)
+                    {
+                        endDate = ed;
+                        Console.WriteLine(e.Message);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
 
             }
         }

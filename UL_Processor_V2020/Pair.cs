@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace UL_Processor_V2020
+namespace UL_Processor_V2023
 {
     public class Pair
     {
@@ -39,27 +39,13 @@ namespace UL_Processor_V2020
         public double pairProxOriDurationUnstructured = 0;
         public double sharedTimeInSecsUnstructured = 0;
 
-        /*PairBlockTalking,PairTalkingDuration,Subject-Talking-Duration-From_Start*/
-
-        /*public double subjectVocUttCount = 0;
-        public double partnerVocUttCount = 0;
-        public double subjectTotalVocUttCounts = 0;
-        public double partnerTotalVocUttCounts = 0;*/
-
         public LenaVars subjectLenaVarsInContact = new LenaVars();
         public LenaVars partnerLenaVarsInContact = new LenaVars();
-
-        public LenaVars subjectLenaVarsInContactUnstructured = new LenaVars();
-        public LenaVars partnerLenaVarsInContactUnstructured = new LenaVars();
-
-
+         
         public LenaVars subjectLenaVarsInWUBI = new LenaVars();
         public LenaVars partnerLenaVarsInWUBI = new LenaVars();
 
-
-            /********DEBUG CLEANUO W PAIRVARIABLES ABOVE*///////
-        public Dictionary<String, pairVariables> activityPairVariables = new Dictionary<string, pairVariables>();
-
+         
         public Pair(String pair, String s, String p)
         {
             szSubjectMapId = s;
@@ -86,11 +72,6 @@ namespace UL_Processor_V2020
         public double pairBlockTalking = 0;
         public double pairProxDuration = 0;
         public double pairProxOriDuration = 0;
-
-
-        public double subjectJoinedCryUnstructured;
-        public double partnerJoinedCryUnstructured;
-        public double joinedCryUnstructured;
 
         
         public LenaVars subjectLenaVarsInContact = new LenaVars();
