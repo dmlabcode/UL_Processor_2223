@@ -195,33 +195,7 @@ namespace UL_Processor_V2023
             double l = x2 - x!=0?Math.Abs(x2 - x) / 2:0;
             return x < x2 ? x + l : x2 + l;
         }
-        public static Tuple<double, double, double> getCenterAndOrientationFromLR(PersonSuperInfo pi)
-        {
-            try
-            {
-                if (pi.x == 0 &&
-                pi.y == 0 &&
-                pi.xl != 0 &&
-                pi.yl != 0 &&
-                pi.xr != 0 &&
-                pi.yr != 0)
-                {
-                    pi.y = getCenter(pi.yl, pi.yr);
-                    pi.x = getCenter(pi.xl, pi.xr);
-                     
-                    pi.ori_chaoming = Math.Atan2(pi.yr - pi.yl, pi.xr - pi.xl) / Math.PI * 180 + 90;
-                     
-                    pi.ori_chaoming = pi.ori_chaoming > 360 ? pi.ori_chaoming - 360 : pi.ori_chaoming;
-
-
-                }
-            }
-            catch (Exception e)
-            {
-
-            }
-            return new Tuple<double, double, double>(pi.x, pi.y, pi.ori_chaoming);
-        }
+         
         public static double calcSquaredDist(PersonSuperInfo a, PersonSuperInfo b)
         {
             Double x1 = a.x;
@@ -303,36 +277,41 @@ namespace UL_Processor_V2023
                      
              
         }
-        public static double getChaomingOrientationFromLR(
-                double pixl,
-                double piyl,
-                double pixr,
-                double piyr)
+        public static Tuple<double, double> getRelativeAngles(double a_xl, double a_xr, double a_yl, double a_yr, double b_xl, double b_xr, double b_yl, double b_yr)
         {
-            double piori_chaoming = 0;
-            try
+            Tuple<double, double> r = new Tuple<double, double>(180, 180);
+            if (a_xl > 0 && a_yl > 0 && b_xl > 0 && b_yl > 0)
             {
-                if (
-                pixl != 0 &&
-                piyl != 0 &&
-                pixr != 0 &&
-                piyr != 0)
-                {
-                    double piy = getCenter(piyl, piyr);
-                    double pix = getCenter(pixl, pixr);
+                double a_center_x = getCenter(a_xr, a_xl);
+                double a_center_y = getCenter(a_yr, a_yl);
+                double b_center_x = getCenter(b_xr, b_xl);
+                double b_center_y = getCenter(b_yr, b_yl);
 
-                    piori_chaoming = Math.Atan2(piyr - piyl, pixr - pixl) / Math.PI * 180 + 90;
+                double d_ab_x = b_center_x - a_center_x;
+                double d_ab_y = b_center_y - a_center_y;// getCenter(b_ry, b_ly) - getCenter(a_ry, a_ly);
+                normalize(ref d_ab_x, ref d_ab_y);
+                double d_ba_x = -d_ab_y;
+                double d_ba_y = d_ab_x;
 
-                    piori_chaoming = piori_chaoming > 360 ? piori_chaoming - 360 : piori_chaoming;
+                double da_x = a_xl - a_xr != 0 ? (a_xl - a_xr) / 2 : a_xr;
+                double da_y = a_yl - a_yr != 0 ? (a_yl - a_yr) / 2 : a_yr;
+                double db_x = b_xl - b_xr != 0 ? (b_xl - b_xr) / 2 : b_xr;
+                double db_y = b_yl - b_yr != 0 ? (b_yl - b_yr) / 2 : b_yr;
 
+                normalize(ref da_x, ref da_y);
+                normalize(ref db_x, ref db_y);
 
-                }
+                double dx_a = (d_ab_x * da_x) + (d_ab_y * da_y);
+                double dy_a = (d_ba_x * da_x) + (d_ba_y * da_y);
+                double o_a = Math.Atan2(-dx_a, dy_a) * (180 / Math.PI);
+
+                double dx_b = (d_ab_x * db_x) + (d_ab_y * db_y);
+                double dy_b = (d_ba_x * db_x) + (d_ba_y * db_y);
+                double o_b = Math.Atan2(dx_b, -dy_b) * (180 / Math.PI);
+                r = new Tuple<double, double>((o_a), (o_b));
             }
-            catch (Exception e)
-            {
-
-            }
-            return piori_chaoming;
+            return r;
         }
+         
     }
 }

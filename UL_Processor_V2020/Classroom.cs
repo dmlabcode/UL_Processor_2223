@@ -253,7 +253,7 @@ namespace UL_Processor_V2023
                  
                 //ONSETS
                 String szOnsetOutputFile = dir + "//SYNC//ONSETS//DAYONSETS_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile, startHour, endHour, endMinute);//takes only mapping start-end
+                Dictionary<String, Tuple<String, DateTime>> lenaStartTimes = classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile, startHour, endHour, endMinute);//takes only mapping start-end
                 filesToMerge["ONSETS"].Add(szOnsetOutputFile);
                  
                 //GR
@@ -265,9 +265,14 @@ namespace UL_Processor_V2023
 
                 if (all || tenSecs)
                 {
+
+                    classRoomDay.setTenthOfSecALICE(dir + "//BEEPONSETS_" + className + ".csv", lenaStartTimes);
+
                     classRoomDay.setTenthOfSecLENA();
                     szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                     classRoomDay.writeTenthOfSec(szTenthOutputFile);
+
+                     
                 }
                 if ( all)
                 {

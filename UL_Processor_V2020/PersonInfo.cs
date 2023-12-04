@@ -14,7 +14,7 @@ namespace UL_Processor_V2023
         public DateTime time;
         public double x = 0;
         public double y = 0;
-
+        public double z = 0; 
     }
     public class PersonSuperInfo: PersonInfo
     {
@@ -23,6 +23,8 @@ namespace UL_Processor_V2023
         public double xr = 0;
         public double yr = 0;
         public double ori_chaoming = 0;
+        public double orientation_pi = 0;//degrees
+        public double orientation_deg = 0;//degrees
         public Boolean wasTalking = false;
         //public double vocUttCount = 0;
         //public double adultWordCount = 0;

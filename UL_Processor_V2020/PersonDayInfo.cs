@@ -11,6 +11,7 @@ namespace UL_Processor_V2023
         public String mapId = "";
         public String status = "ABSENT";
         public String lenaId = "";
+        public String sonyId = "";
         public String leftUbi = "";
         public String rightUbi = "";
         public Boolean present = false;
@@ -75,6 +76,7 @@ namespace UL_Processor_V2023
             {
                 mapId = id;
                 lenaId = line[columnIndex["LENA"]].Trim();
+                sonyId = line[columnIndex["SONY"]].Trim();
                 leftUbi = line[columnIndex["LEFT"]].Trim();
                 rightUbi = line[columnIndex["RIGHT"]].Trim();
                 present = line[columnIndex["STATUS"]].ToUpper() == "PRESENT";
