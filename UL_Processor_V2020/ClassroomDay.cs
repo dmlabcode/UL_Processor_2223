@@ -2158,10 +2158,10 @@ namespace UL_Processor_V2023
                                                     break;
 
                                             }
+                                        }
                                             time = time.AddMilliseconds(100);
                                             blockDur = Math.Round(blockDur - 0.1, 2);
                                         } while (blockDur > 0) ;
-                                    }
                                     }
                                 catch { }
                                     /*DateTime time = lenaOnset.startTime;
