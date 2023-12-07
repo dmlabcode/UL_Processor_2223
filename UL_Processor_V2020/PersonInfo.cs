@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UL_Processor_V2020;
 
 namespace UL_Processor_V2023
 {
@@ -29,5 +30,7 @@ namespace UL_Processor_V2023
         //public double vocUttCount = 0;
         //public double adultWordCount = 0;
         public LenaVars lenaVars = new LenaVars();
+        public AliceVars aliceVars = new AliceVars();
+
     }
 }

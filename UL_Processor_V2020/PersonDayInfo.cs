@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UL_Processor_V2020;
 
 namespace UL_Processor_V2023
 {
@@ -21,6 +22,8 @@ namespace UL_Processor_V2023
         public LenaVars totalLenaVars = new LenaVars();
         public LenaVars WUBILenaVars = new LenaVars();
 
+        public AliceVars totalAliceVars = new AliceVars();
+        public AliceVars WUBIAliceVars = new AliceVars();
 
         public Dictionary<String, LenaVars> totalLenaVarsAct = new Dictionary<string, LenaVars>();
        // public Dictionary<String, LenaVars> WUBILenaVarsAct = new Dictionary<string, LenaVars>();

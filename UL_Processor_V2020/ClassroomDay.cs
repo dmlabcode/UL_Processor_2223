@@ -11,7 +11,9 @@ using IronPython.Hosting;
 using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
 
-using Newtonsoft.Json;  
+using Newtonsoft.Json;
+using static IronPython.Modules._ast;
+using static IronPython.Modules.PythonDateTime;
 
 namespace UL_Processor_V2023
 {
@@ -496,11 +498,7 @@ namespace UL_Processor_V2023
                             pair.subjectLenaVarsInContact.totalAdultWordCount += ubiTenths[t][pair.szSubjectMapId].lenaVars.totalAdultWordCount;
                             pair.subjectLenaVarsInContact.totalNoise += ubiTenths[t][pair.szSubjectMapId].lenaVars.totalNoise;
                             pair.subjectLenaVarsInContact.totalOLN += ubiTenths[t][pair.szSubjectMapId].lenaVars.totalOLN;
-
-                            if (ubiTenths[t][pair.szSubjectMapId].lenaVars.totalChildUttCount > 0)
-                            {
-                                bool stop = true;
-                            }
+ 
 
                             pair.partnerLenaVarsInContact.totalTurnCounts += ubiTenths[t][pair.szPartnerMapId].lenaVars.totalTurnCounts;
                             pair.partnerLenaVarsInContact.totalChildUttCount += ubiTenths[t][pair.szPartnerMapId].lenaVars.totalChildUttCount;
@@ -519,7 +517,23 @@ namespace UL_Processor_V2023
 
                             }
 
-                             
+                            pair.subjectAliceVarsInContact.kchi += ubiTenths[t][pair.szSubjectMapId].aliceVars.kchi;
+                            pair.partnerAliceVarsInContact.kchi += ubiTenths[t][pair.szPartnerMapId].aliceVars.kchi;
+                            
+                            pair.subjectAliceVarsInContact.chi += ubiTenths[t][pair.szSubjectMapId].aliceVars.chi;
+                            pair.partnerAliceVarsInContact.chi += ubiTenths[t][pair.szPartnerMapId].aliceVars.chi;
+
+                            pair.subjectAliceVarsInContact.fem += ubiTenths[t][pair.szSubjectMapId].aliceVars.fem;
+                            pair.partnerAliceVarsInContact.fem += ubiTenths[t][pair.szPartnerMapId].aliceVars.fem;
+
+                            pair.subjectAliceVarsInContact.mal += ubiTenths[t][pair.szSubjectMapId].aliceVars.mal;
+                            pair.partnerAliceVarsInContact.mal += ubiTenths[t][pair.szPartnerMapId].aliceVars.mal;
+
+                            pair.subjectAliceVarsInContact.speech += ubiTenths[t][pair.szSubjectMapId].aliceVars.speech;
+                            pair.partnerAliceVarsInContact.speech += ubiTenths[t][pair.szPartnerMapId].aliceVars.speech;
+
+
+
 
                             //FOR SOCIAL ONSETS
                             if (ubiTenths[t][pair.szSubjectMapId].wasTalking || ubiTenths[t][pair.szPartnerMapId].wasTalking)
@@ -608,6 +622,21 @@ namespace UL_Processor_V2023
                         pair.partnerLenaVarsInWUBI.totalAdultWordCount += ubiTenths[t][pair.szPartnerMapId].lenaVars.totalAdultWordCount;
                         pair.partnerLenaVarsInWUBI.totalNoise += ubiTenths[t][pair.szPartnerMapId].lenaVars.totalNoise;
                         pair.partnerLenaVarsInWUBI.totalOLN += ubiTenths[t][pair.szPartnerMapId].lenaVars.totalOLN;
+
+                        pair.subjectAliceVarsInWUBI.kchi += ubiTenths[t][pair.szSubjectMapId].aliceVars.kchi;
+                        pair.partnerAliceVarsInWUBI.kchi += ubiTenths[t][pair.szPartnerMapId].aliceVars.kchi;
+
+                        pair.subjectAliceVarsInWUBI.chi += ubiTenths[t][pair.szSubjectMapId].aliceVars.chi;
+                        pair.partnerAliceVarsInWUBI.chi += ubiTenths[t][pair.szPartnerMapId].aliceVars.chi;
+
+                        pair.subjectAliceVarsInWUBI.fem += ubiTenths[t][pair.szSubjectMapId].aliceVars.fem;
+                        pair.partnerAliceVarsInWUBI.fem += ubiTenths[t][pair.szPartnerMapId].aliceVars.fem;
+
+                        pair.subjectAliceVarsInWUBI.mal += ubiTenths[t][pair.szSubjectMapId].aliceVars.mal;
+                        pair.partnerAliceVarsInWUBI.mal += ubiTenths[t][pair.szPartnerMapId].aliceVars.mal;
+
+                        pair.subjectAliceVarsInWUBI.speech += ubiTenths[t][pair.szSubjectMapId].aliceVars.speech;
+                        pair.partnerAliceVarsInWUBI.speech += ubiTenths[t][pair.szPartnerMapId].aliceVars.speech;
 
                         if (doApp)
                         {
@@ -1225,6 +1254,7 @@ namespace UL_Processor_V2023
 
                     XmlNodeList nodes = recording.SelectNodes("Conversation|Pause");
                     PersonDayInfo pdi = getPersonInfoByLena(szLenaId);
+
                     if (pdi.mapId != "")
                     {
                         Person pi = personBaseMappings[pdi.mapId];
@@ -1688,17 +1718,19 @@ namespace UL_Processor_V2023
             return lenaStartTimes;
         }
 
-                    public PersonDayInfo getPersonInfoByLena(String lenaId)
-                    {
-                        foreach(PersonDayInfo pdi in personDayMappings.Values)
-                        {
-                            if(pdi.lenaId==lenaId && pdi.present && pdi.status == "PRESENT")
-                            {
-                                return pdi;
-                            }
-                        }
-                        return new PersonDayInfo();
-                    }
+        public PersonDayInfo getPersonInfoByLena(String lenaId)
+        {
+            foreach(PersonDayInfo pdi in personDayMappings.Values)
+            {
+                if(pdi.lenaId==lenaId && pdi.present && pdi.status == "PRESENT")
+                {
+                    return pdi;
+                }
+            }
+            return new PersonDayInfo();
+        }
+      
+
                    
         public static DateTime getMsTime(DateTime first)
         {
@@ -1973,11 +2005,13 @@ namespace UL_Processor_V2023
             }
  
         }
-        public void setTenthOfSecALICE(String beepOnsetFile, Dictionary<String, Tuple<String, DateTime>> lenaStartTimes)
+        public void setTenthOfSecALICE(String dir, String className, Dictionary<String, Tuple<String, DateTime>> lenaStartTimes)
         {
+            String beepOnsetFile = dir + "//BEEPONSETS_" + className + ".csv";
             Dictionary<String, double> sonyOnsetSecs = new Dictionary<String, double>();
             Dictionary<String, DateTime> sonyStartTimes = new Dictionary<String, DateTime>();
-            DateTime lenaBeepTime= DateTime.Now;
+            Dictionary<String, String> subjectToSonyFile = new Dictionary<String, String>();
+            DateTime lenaBeepTime = DateTime.Now;
             double lenaBeepOnset = 0;
             String szLenaSubjectFound = "";
             if (File.Exists(beepOnsetFile))
@@ -2022,6 +2056,7 @@ namespace UL_Processor_V2023
                                                 if (!sonyOnsetSecs.ContainsKey(sk))
                                                 {
                                                     sonyOnsetSecs.Add(sk, Convert.ToDouble(line[2]));
+                                                    subjectToSonyFile.Add(line[1].Replace(".wav","").Trim(), sk) ;
                                                 }
                                                 break;
                                             }
@@ -2040,6 +2075,121 @@ namespace UL_Processor_V2023
 
                     sonyStartTimes.Add(sonyUser, sonyStartTime);
                 }
+            String szDayFolder = Utilities.getDateDashStr(classDay);
+
+            string[] szAliceFiles = Directory.GetFiles(dir + "//" + szDayFolder + "//Alice_Data//", "*.rttm");
+            foreach(String aliceFile in szAliceFiles)
+            {
+                using (StreamReader sr = new StreamReader(aliceFile))
+                { 
+                    while (!sr.EndOfStream)
+                    {
+                        String szLine = sr.ReadLine();
+                        String[] line = szLine.Split(' ');
+                        if (line.Length >= 7)
+                        {
+                            if (subjectToSonyFile.ContainsKey(line[1].Trim()))
+                            {
+                                try
+                                {
+                                    String subject = subjectToSonyFile[line[1].Trim()];
+                                    String szSartTime = line[3];
+                                    String szBlockDur = line[4];
+                                    String szType = line[7];
+                                    PersonDayInfo pdi = personDayMappings[subject];
+                                    double blockDur = Convert.ToDouble(szBlockDur);
+                                    DateTime startTime = sonyStartTimes[subject];
+                                    int ms = startTime.Millisecond > 0 ? startTime.Millisecond / 100 * 100 : startTime.Millisecond;// + 100;
+                                    startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, startTime.Minute, startTime.Second, ms);
+                                    DateTime timeEnd = startTime.AddSeconds(blockDur);
+                                    ms = timeEnd.Millisecond > 0 ? timeEnd.Millisecond / 100 * 100 : timeEnd.Millisecond;// + 100;
+                                    timeEnd = new DateTime(timeEnd.Year, timeEnd.Month, timeEnd.Day, timeEnd.Hour, timeEnd.Minute, timeEnd.Second, ms);
+                                    DateTime time = startTime;
+                                    do
+                                    {
+                                        /*PersonDayInfo pdi = getPersonInfoByLena(szLenaId);
+                 start >= pdi.startDate &&
+                             start <= pdi.endDate)*/
+                                        if (time >= pdi.startDate &&
+                                            time <= pdi.endDate)
+                                        {
+                                            Boolean WUBI = ubiTenths.ContainsKey(time) && ubiTenths[time].ContainsKey(subject);
+                                            switch (szType)
+                                            {
+                                                case "KCHI":
+                                                    personDayMappings[subject].totalAliceVars.kchi += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.kchi += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.kchi += .1;
+                                                    }
+                                                    break;
+                                                case "CHI":
+                                                    personDayMappings[subject].totalAliceVars.chi += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.chi += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.chi += .1;
+                                                    }
+                                                    break;
+                                                case "FEM":
+                                                    personDayMappings[subject].totalAliceVars.fem += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.fem += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.fem += .1;
+                                                    }
+                                                    break;
+                                                case "MAL":
+                                                    personDayMappings[subject].totalAliceVars.mal += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.mal += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.mal += .1;
+                                                    }
+                                                    break;
+                                                case "SPEECH":
+                                                    personDayMappings[subject].totalAliceVars.speech += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.speech += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.speech += .1;
+                                                    }
+                                                    break;
+
+                                            }
+                                            time = time.AddMilliseconds(100);
+                                            blockDur = Math.Round(blockDur - 0.1, 2);
+                                        } while (blockDur > 0) ;
+                                    }
+                                    }
+                                catch { }
+                                    /*DateTime time = lenaOnset.startTime;
+                        int ms = time.Millisecond > 0 ? time.Millisecond / 100 * 100 : time.Millisecond;// + 100;
+                        time = new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, ms);
+                        DateTime timeEnd = lenaOnset.startTime.AddSeconds(lenaOnset.durSecs);
+                        ms = timeEnd.Millisecond > 0 ? timeEnd.Millisecond / 100 * 100 : timeEnd.Millisecond;// + 100;
+                        timeEnd = new DateTime(timeEnd.Year, timeEnd.Month, timeEnd.Day, timeEnd.Hour, timeEnd.Minute, timeEnd.Second, ms);
+
+                        double blockDur = (timeEnd - time).Seconds + ((timeEnd - time).Milliseconds > 0 ? ((timeEnd - time).Milliseconds / 1000.00) : 0);
+                        double vocDur10 = (lenaOnset.durSecs / blockDur) / 10;
+                        double vocCount10 = (lenaOnset.count / blockDur) / 10;
+                        double tcCount10 = (lenaOnset.tc / blockDur) / 10;
+
+
+                        Boolean personExists = personDayMappings.ContainsKey(person);
+                        if( personExists && blockDur>0)
+                        {
+
+                            switch (lenaOnset.type)
+                            {*/
+    }
+}
+                    }
+                }
+            }
+
+
 
         }
         public void writeTenthOfSec(String dir)

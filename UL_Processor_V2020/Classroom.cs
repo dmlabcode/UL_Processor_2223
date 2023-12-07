@@ -266,7 +266,7 @@ namespace UL_Processor_V2023
                 if (all || tenSecs)
                 {
 
-                    classRoomDay.setTenthOfSecALICE(dir + "//BEEPONSETS_" + className + ".csv", lenaStartTimes);
+                    classRoomDay.setTenthOfSecALICE(dir, className, lenaStartTimes);
 
                     classRoomDay.setTenthOfSecLENA();
                     szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
