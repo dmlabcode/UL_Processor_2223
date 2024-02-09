@@ -14,6 +14,7 @@ using Microsoft.Scripting.Hosting;
 using Newtonsoft.Json;
 using static IronPython.Modules._ast;
 using static IronPython.Modules.PythonDateTime;
+using UL_Processor_V2020;
 
 namespace UL_Processor_V2023
 {
@@ -150,8 +151,8 @@ namespace UL_Processor_V2023
                 int pos = 0;
                 foreach (String d in subject.diagnosisList)
                 {
-                    newPairDiagnosis += (d + "," + partner.diagnosisList[pos] + ",");
-                    newPairDiagnosisP += (partner.diagnosisList[pos] + "," + d + ",");
+                    newPairDiagnosis += (d + "," + (partner.diagnosisList.Count>pos? partner.diagnosisList[pos]:"") + ",");
+                    newPairDiagnosisP += ((partner.diagnosisList.Count > pos ? partner.diagnosisList[pos] : "") + "," + d + ",");
                     pos++;
                 }
                 String newPairLanguages = "";
@@ -159,8 +160,8 @@ namespace UL_Processor_V2023
                 pos = 0;
                 foreach (String l in subject.languagesList)
                 {
-                    newPairLanguages +=  ( l + "," + partner.languagesList[pos] + ",");
-                    newPairLanguagesP += (partner.languagesList[pos] + "," + l+ ",");
+                    newPairLanguages +=  ( l + "," + (partner.languagesList.Count > pos ? partner.languagesList[pos] : "") + ",");
+                    newPairLanguagesP += ((partner.languagesList.Count > pos ? partner.languagesList[pos] : "") + "," + l+ ",");
                     pos++;
                 }
 
@@ -384,6 +385,434 @@ namespace UL_Processor_V2023
                (partnerLenaVarsInTotal.maxDb != 0 && partnerLenaVarsInTotal.totalSegments != 0 ? partnerLenaVarsInTotal.maxDb / partnerLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
                className;
                
+                sw.WriteLine(szSw);
+
+
+            }
+            sw.Close();
+        }
+        public void writePairActivityDatawAlice(Dictionary<String, Pair> pairs, String className, String szOutputFile, List<String> diagnosisList, List<String> languagesList)
+        {
+            TextWriter sw = new StreamWriter(szOutputFile, false);
+
+
+            String szHeader =
+"Date,Subject,Partner,SubjectShortID,PartnerShortID,SubjectDiagnosis,PartnerDiagnosis,SubjectLanguage,PartnerLanguage," +
+"SubjectGender,PartnerGender,Adult,SubjectStatus,PartnerStatus,SubjectType,PartnerType," +
+"Input1_pvc_or_sac,Input2_pvc_or_stc," +
+"Input3_dur_pvd_or_uttl,";
+
+
+            szHeader += "PairBlockTalking,PairTalkingDuration," +
+//taken out Subject-Talking-Duration-From_Start,"+Partner-Talking-Duration-From-Start,
+"Subject-Talking-Duration-Evenly-Spread,Partner-Talking-Duration-Evenly-Spread," +
+"SubjectTurnCount,PartnerTurnCount,SubjectVocCount,PartnerVocCount,SubjectAdultCount,PartnerAdultCount,SubjectNoise," +
+"PartnerNoise,SubjectOLN,PartnerOLN,SubjectCry,PartnerCry,SubjectJoinedCry,PartnerJoinedCry,JoinedCry,";
+
+
+            szHeader += "PairProximityDuration," +
+"PairOrientation-ProximityDuration,SharedTimeinClassroom,SubjectTime,PartnerTime,TotalRecordingTime,WUBITotalVD,TotalVD," +
+"PartnerWUBITotalVD,PartnerTotalVD,WUBITotalVC,TotalVC,PartnerWUBITotalVC,PartnerTotalVC,WUBITotalTC,TotalTC,PartnerWUBITotalTC," +
+"PartnerTotalTC,WUBITotalAC,TotalAC,PartnerWUBITotalAC,PartnerTotalAC,WUBITotalNO,TotalNO,PartnerWUBITotalNO,PartnerTotalNO," +
+"WUBITotalOLN,TotalOLN,PartnerWUBITotalOLN,PartnerTotalOLN,WUBITotalCRY,TotalCRY,PartnerWUBITotalCRY,PartnerTotalCRY," +
+"WUBITotalAV_DB,TotalAV_DB,PartnerWUBITotalAV_DB,PartnerTotalAV_DB,WUBITotalAV_PEAK_DB,TotalAV_PEAK_DB,PartnerWUBITotalAV_PEAK_DB,PartnerTotalAV_PEAK_DB,CLASSROOM";
+
+            szHeader +=",Subject_ALICE_KCHI,Partner_ALICE_KCHI,"+
+                                        "Subject_ALICE_CHI,Partner_ALICE_CHI,"+
+                                        "Subject_ALICE_FEM,Partner_ALICE_FEM," +
+                                        "Subject_ALICE_MAL,Partner_ALICE_MAL," +
+                                        "Subject_ALICE_SPEECH,Partner_ALICE_SPEECH," +
+                                        "WUBITotal_Subject_ALICE_KCHI,Total_Subject_ALICE_KCHI,"+
+                                        "WUBITotal_Partner_ALICE_KCHI,Total_Partner_ALICE_KCHI," +
+                                        "WUBITotal_Subject_ALICE_CHI,Total_Subject_ALICE_CHI," +
+                                        "WUBITotal_Partner_ALICE_CHI,Total_Partner_ALICE_CHI," +
+                                        "WUBITotal_Subject_ALICE_FEM,Total_Subject_ALICE_FEM," +
+                                        "WUBITotal_Partner_ALICE_FEM,Total_Partner_ALICE_FEM," +
+                                        "WUBITotal_Subject_ALICE_MAL,Total_Subject_ALICE_MAL," +
+                                        "WUBITotal_Partner_ALICE_MAL,Total_Partner_ALICE_MAL," +
+                                        "WUBITotal_Subject_ALICE_SPEECH,Total_Subject_ALICE_SPEECH," +
+                                        "WUBITotal_Partner_ALICE_SPEECH,Total_Partner_ALICE_SPEECH";
+            //82
+            szHeader =szHeader.Replace(" ", "");
+            String newDiagnosis = "";
+            foreach (String d in diagnosisList)
+            {
+                newDiagnosis += ("Subject" + d + ",Partner" + d + ",");
+            }
+            String newLanguages = "";
+            foreach (String l in languagesList)
+            {
+                newLanguages += ("Subject" + l + ",Partner" + l + ",");
+            }
+
+            newDiagnosis = newDiagnosis == "SubjectDiagnosis,PartnerDiagnosis,SubjectLanguage,PartnerLanguage," ? "SubjectDiagnosis,PartnerDiagnosis," : newDiagnosis;
+            newLanguages = newLanguages == "" ? "SubjectLanguage,PartnerLanguage," : newLanguages;
+            szHeader = szHeader.Replace("SubjectDiagnosis,PartnerDiagnosis,", newDiagnosis);
+            szHeader = szHeader.Replace("SubjectLanguage,PartnerLanguage,", newLanguages);
+
+            sw.WriteLine(szHeader);
+
+            foreach (String szPair in pairs.Keys)
+            {
+                String szSubject = szPair.Split('|')[0];
+                String szPartner = szPair.Split('|')[1];
+                Person subject = personBaseMappings[szSubject];
+                Person partner = personBaseMappings[szPartner];
+                Pair pair = pairs[szPair];
+                PersonDayInfo sdi = Utilities.getPerson(personDayMappings, szSubject);
+                PersonDayInfo pdi = Utilities.getPerson(personDayMappings, szPartner);
+
+                LenaVars subjectLenaVarsInContact = pair.subjectLenaVarsInContact;
+                LenaVars partnerLenaVarsInContact = pair.partnerLenaVarsInContact;
+
+                LenaVars subjectLenaVarsInWUBI = personDayMappings[szSubject].WUBILenaVars;
+                LenaVars partnerLenaVarsInWUBI = personDayMappings[szPartner].WUBILenaVars;
+                LenaVars subjectLenaVarsInTotal = personDayMappings[szSubject].totalLenaVars;
+                LenaVars partnerLenaVarsInTotal = personDayMappings[szPartner].totalLenaVars;
+
+                AliceVars subjectAliceVarsInContact = pair.subjectAliceVarsInContact;
+                AliceVars partnerAliceVarsInContact = pair.partnerAliceVarsInContact;
+
+                AliceVars subjectAliceVarsInWUBI = personDayMappings[szSubject].WUBIAliceVars;
+                AliceVars partnerAliceVarsInWUBI = personDayMappings[szPartner].WUBIAliceVars;
+                AliceVars subjectAliceVarsInTotal = personDayMappings[szSubject].totalAliceVars;
+                AliceVars partnerAliceVarsInTotal = personDayMappings[szPartner].totalAliceVars;
+
+
+                String newPairDiagnosis = "";
+                String newPairDiagnosisP = "";
+                int pos = 0;
+                foreach (String d in subject.diagnosisList)
+                {
+                    newPairDiagnosis += (d + "," + partner.diagnosisList[pos] + ",");
+                    newPairDiagnosisP += (partner.diagnosisList[pos] + "," + d + ",");
+                    pos++;
+                }
+                String newPairLanguages = "";
+                String newPairLanguagesP = "";
+                pos = 0;
+                foreach (String l in subject.languagesList)
+                {
+                    newPairLanguages += (l + "," + partner.languagesList[pos] + ",");
+                    newPairLanguagesP += (partner.languagesList[pos] + "," + l + ",");
+                    pos++;
+                }
+
+                String szSw = this.classDay.Month + "/" + this.classDay.Day + "/" + this.classDay.Year + "," +
+                subject.longId + "," +
+                partner.longId + "," +
+                subject.shortId + "," +
+                partner.shortId + "," +
+                newPairDiagnosis +
+                newPairLanguages +
+                subject.gender + "," +
+                partner.gender + "," +
+                (!(subject.subjectType.ToUpper().Trim() == "CHILD" && partner.subjectType.ToUpper().Trim() == "CHILD")) + "," +
+                sdi.status + "," +
+                pdi.status + "," +
+                subject.subjectType + "," +
+                partner.subjectType + "," +
+                (sdi.status.ToUpper() == "PRESENT" && pdi.status.ToUpper() == "PRESENT" ? (partner.subjectType.ToUpper() == "CHILD" ? partnerLenaVarsInContact.totalChildUttCount.ToString() : subjectLenaVarsInContact.totalAdultWordCount.ToString()) : "NA") + "," +
+                (sdi.status.ToUpper() == "PRESENT" && pdi.status.ToUpper() == "PRESENT" ? (partner.subjectType.ToUpper() == "CHILD" ? partnerLenaVarsInContact.totalChildUttCount.ToString() : subjectLenaVarsInContact.totalTurnCounts.ToString()) : "NA") + "," +
+                (sdi.status.ToUpper() == "PRESENT" && pdi.status.ToUpper() == "PRESENT" ? (partner.subjectType.ToUpper() == "CHILD" ? partnerLenaVarsInContact.totalChildUttDuration.ToString() : subjectLenaVarsInContact.totalAdultWordCount.ToString()) : "NA") + ",";
+
+
+                szSw += pair.pairBlockTalking + "," +
+                 pair.pairProxOriDuration + "," +//partnerLenaVarsInContact.totalChildUttDuration + "," +
+                                                 //"NA," +
+                                                 //"NA," +
+                subjectLenaVarsInContact.totalChildUttDuration + "," +
+                partnerLenaVarsInContact.totalChildUttDuration + "," +
+                subjectLenaVarsInContact.totalTurnCounts + "," +
+                partnerLenaVarsInContact.totalTurnCounts + "," +
+                subjectLenaVarsInContact.totalChildUttCount + "," +
+                partnerLenaVarsInContact.totalChildUttCount + "," +
+                subjectLenaVarsInContact.totalAdultWordCount + "," +
+                partnerLenaVarsInContact.totalAdultWordCount + "," +
+                subjectLenaVarsInContact.totalNoise + "," +
+                partnerLenaVarsInContact.totalNoise + "," +
+              subjectLenaVarsInContact.totalOLN + "," +
+                partnerLenaVarsInContact.totalOLN + "," +
+                subjectLenaVarsInContact.totalChildCryDuration + "," +
+                partnerLenaVarsInContact.totalChildCryDuration + "," +
+
+
+                pair.partnerJoinedCry + "," +
+                pair.subjectJoinedCry + "," +
+                pair.joinedCry + ",";
+
+
+                szSw += pair.pairProxDuration + "," +
+                pair.pairProxOriDuration + "," +
+                pair.sharedTimeInSecs + "," +
+                pair.subjectTotalTimeInSecs + "," +
+                pair.partnerTotalTimeInSecs + "," +
+                recSecs + "," +
+                subjectLenaVarsInWUBI.totalChildUttDuration + "," +
+                subjectLenaVarsInTotal.totalChildUttDuration + "," +
+                partnerLenaVarsInWUBI.totalChildUttDuration + "," +
+                partnerLenaVarsInTotal.totalChildUttDuration + "," +
+
+                subjectLenaVarsInWUBI.totalChildUttCount + "," +
+                subjectLenaVarsInTotal.totalChildUttCount + "," +
+                partnerLenaVarsInWUBI.totalChildUttCount + "," +
+                partnerLenaVarsInTotal.totalChildUttCount + "," +
+
+                subjectLenaVarsInWUBI.totalTurnCounts + "," +
+                subjectLenaVarsInTotal.totalTurnCounts + "," +
+                partnerLenaVarsInWUBI.totalTurnCounts + "," +
+                partnerLenaVarsInTotal.totalTurnCounts + "," +
+
+                subjectLenaVarsInWUBI.totalAdultWordCount + "," +
+                subjectLenaVarsInTotal.totalAdultWordCount + "," +
+                partnerLenaVarsInWUBI.totalAdultWordCount + "," +
+                partnerLenaVarsInTotal.totalAdultWordCount + "," +
+
+                subjectLenaVarsInWUBI.totalNoise + "," +
+                subjectLenaVarsInTotal.totalNoise + "," +
+                partnerLenaVarsInWUBI.totalNoise + "," +
+                partnerLenaVarsInTotal.totalNoise + "," +
+
+                subjectLenaVarsInWUBI.totalOLN + "," +
+                subjectLenaVarsInTotal.totalOLN + "," +
+                partnerLenaVarsInWUBI.totalOLN + "," +
+                partnerLenaVarsInTotal.totalOLN + "," +
+
+                subjectLenaVarsInWUBI.totalChildCryDuration + "," +
+                subjectLenaVarsInTotal.totalChildCryDuration + "," +
+                partnerLenaVarsInWUBI.totalChildCryDuration + "," +
+                partnerLenaVarsInTotal.totalChildCryDuration + "," +
+
+
+                (subjectLenaVarsInWUBI.avgDb != 0 && subjectLenaVarsInWUBI.totalSegments != 0 ? subjectLenaVarsInWUBI.avgDb / subjectLenaVarsInWUBI.totalSegments : 0.00).ToString() + "," +
+                (subjectLenaVarsInTotal.avgDb != 0 && subjectLenaVarsInTotal.totalSegments != 0 ? subjectLenaVarsInTotal.avgDb / subjectLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
+                (partnerLenaVarsInWUBI.avgDb != 0 && partnerLenaVarsInWUBI.totalSegments != 0 ? partnerLenaVarsInWUBI.avgDb / partnerLenaVarsInWUBI.totalSegments : 0.00).ToString() + "," +
+                (partnerLenaVarsInTotal.avgDb != 0 && partnerLenaVarsInTotal.totalSegments != 0 ? partnerLenaVarsInTotal.avgDb / partnerLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
+
+                (subjectLenaVarsInWUBI.maxDb != 0 && subjectLenaVarsInWUBI.totalSegments != 0 ? subjectLenaVarsInWUBI.maxDb / subjectLenaVarsInWUBI.totalSegments : 0.00).ToString() + "," +
+                (subjectLenaVarsInTotal.maxDb != 0 && subjectLenaVarsInTotal.totalSegments != 0 ? subjectLenaVarsInTotal.maxDb / subjectLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
+                (partnerLenaVarsInWUBI.maxDb != 0 && partnerLenaVarsInWUBI.totalSegments != 0 ? partnerLenaVarsInWUBI.maxDb / partnerLenaVarsInWUBI.totalSegments : 0.00).ToString() + "," +
+                (partnerLenaVarsInTotal.maxDb != 0 && partnerLenaVarsInTotal.totalSegments != 0 ? partnerLenaVarsInTotal.maxDb / partnerLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
+                className;
+
+                /*szHeader +=@",Subject_ALICE_KCHI,Partner_ALICE_KCHI,
+                                        Subject_ALICE_CHI,Partner_ALICE_CHI,
+                                        Subject_ALICE_FEM,Partner_ALICE_FEM,
+                                        Subject_ALICE_MAL,Partner_ALICE_MAL,
+                                        Subject_ALICE_SPEECH,Partner_ALICE_SPEECH,
+                                        WUBITotal_Subject_ALICE_KCHI,Total_Subject_ALICE_KCHI,
+                                        WUBITotal_Partner_ALICE_KCHI,Total_Partner_ALICE_KCHI,
+                                        WUBITotal_Subject_ALICE_CHI,Total_Subject_ALICE_CHI,
+                                        WUBITotal_Partner_ALICE_CHI,Total_Partner_ALICE_CHI,
+                                        WUBITotal_Subject_ALICE_FEM,Total_Subject_ALICE_FEM,
+                                        WUBITotal_Partner_ALICE_FEM,Total_Partner_ALICE_FEM,
+                                        WUBITotal_Subject_ALICE_MAL,Total_Subject_ALICE_MAL,
+                                        WUBITotal_Partner_ALICE_MAL,Total_Partner_ALICE_MAL,
+                                        WUBITotal_Subject_ALICE_SPEECH,Total_Subject_ALICE_SPEECH,
+                                        WUBITotal_Partner_ALICE_SPEECH,Total_Partner_ALICE_SPEECH";
+            //82*/
+
+                szSw += ","+subjectAliceVarsInContact.kchi+","+
+                    partnerAliceVarsInContact.kchi + "," +
+                    subjectAliceVarsInContact.chi + "," +
+                    partnerAliceVarsInContact.chi + "," +
+                    subjectAliceVarsInContact.fem + "," +
+                    partnerAliceVarsInContact.fem + "," +
+                    subjectAliceVarsInContact.mal + "," +
+                    partnerAliceVarsInContact.mal + "," +
+                    subjectAliceVarsInContact.speech + "," +
+                    partnerAliceVarsInContact.speech + ","+
+
+                    subjectAliceVarsInWUBI.kchi + "," +
+                    subjectAliceVarsInTotal.kchi + "," +
+                    partnerAliceVarsInWUBI.kchi + "," +
+                    partnerAliceVarsInTotal.kchi + ","+
+
+                    subjectAliceVarsInWUBI.chi + "," +
+                    subjectAliceVarsInTotal.chi + "," +
+                    partnerAliceVarsInWUBI.chi + "," +
+                    partnerAliceVarsInTotal.chi + "," +
+
+                    subjectAliceVarsInWUBI.fem + "," +
+                    subjectAliceVarsInTotal.fem + "," +
+                    partnerAliceVarsInWUBI.fem + "," +
+                    partnerAliceVarsInTotal.fem + "," +
+
+                    subjectAliceVarsInWUBI.mal + "," +
+                    subjectAliceVarsInTotal.mal + "," +
+                    partnerAliceVarsInWUBI.mal + "," +
+                    partnerAliceVarsInTotal.mal + "," +
+
+                    subjectAliceVarsInWUBI.speech + "," +
+                    subjectAliceVarsInTotal.speech + "," +
+                    partnerAliceVarsInWUBI.speech + "," +
+                    partnerAliceVarsInTotal.speech;
+
+
+                    sw.WriteLine(szSw);
+
+
+
+
+
+
+
+                szSubject = szPair.Split('|')[1];
+                szPartner = szPair.Split('|')[0];
+                subject = personBaseMappings[szSubject];
+                partner = personBaseMappings[szPartner];
+                sdi = Utilities.getPerson(personDayMappings, szSubject);
+                pdi = Utilities.getPerson(personDayMappings, szPartner);
+
+                subjectLenaVarsInContact = pair.partnerLenaVarsInContact;
+                partnerLenaVarsInContact = pair.subjectLenaVarsInContact;
+                subjectAliceVarsInContact = pair.partnerAliceVarsInContact;
+                partnerAliceVarsInContact = pair.subjectAliceVarsInContact;
+
+
+                //szSubject
+                subjectLenaVarsInWUBI = personDayMappings[szSubject].WUBILenaVars;
+                partnerLenaVarsInWUBI = personDayMappings[szPartner].WUBILenaVars;
+                subjectLenaVarsInTotal = personDayMappings[szSubject].totalLenaVars;
+                partnerLenaVarsInTotal = personDayMappings[szPartner].totalLenaVars;
+
+                subjectAliceVarsInWUBI = personDayMappings[szSubject].WUBIAliceVars;
+                partnerAliceVarsInWUBI = personDayMappings[szPartner].WUBIAliceVars;
+                subjectAliceVarsInTotal = personDayMappings[szSubject].totalAliceVars;
+                partnerAliceVarsInTotal = personDayMappings[szPartner].totalAliceVars;
+
+
+                szSw = this.classDay.Month + "/" + this.classDay.Day + "/" + this.classDay.Year + "," +
+               subject.longId + "," +
+               partner.longId + "," +
+               subject.shortId + "," +
+               partner.shortId + "," +
+                newPairDiagnosisP +
+                newPairLanguagesP +
+               subject.gender + "," +
+               partner.gender + "," +
+               (!(subject.subjectType.ToUpper().Trim() == "CHILD" && partner.subjectType.ToUpper().Trim() == "CHILD")) + "," +
+               sdi.status + "," +
+               pdi.status + "," +
+               subject.subjectType + "," +
+               partner.subjectType + "," +
+               (sdi.status.ToUpper() == "PRESENT" && pdi.status.ToUpper() == "PRESENT" ? (partner.subjectType.ToUpper() == "CHILD" ? partnerLenaVarsInContact.totalChildUttCount.ToString() : subjectLenaVarsInContact.totalAdultWordCount.ToString()) : "NA") + "," +
+               (sdi.status.ToUpper() == "PRESENT" && pdi.status.ToUpper() == "PRESENT" ? (partner.subjectType.ToUpper() == "CHILD" ? partnerLenaVarsInContact.totalChildUttCount.ToString() : subjectLenaVarsInContact.totalTurnCounts.ToString()) : "NA") + "," +
+               (sdi.status.ToUpper() == "PRESENT" && pdi.status.ToUpper() == "PRESENT" ? (partner.subjectType.ToUpper() == "CHILD" ? partnerLenaVarsInContact.totalChildUttDuration.ToString() : subjectLenaVarsInContact.totalAdultWordCount.ToString()) : "NA") + ",";
+
+
+                szSw += pair.pairBlockTalking + "," +
+                pair.pairProxOriDuration + "," +//partnerLenaVarsInContact.totalChildUttDuration + "," +
+                                                //"NA," +
+                                                //"NA," +
+                subjectLenaVarsInContact.totalChildUttDuration + "," +
+                partnerLenaVarsInContact.totalChildUttDuration + "," +
+                subjectLenaVarsInContact.totalTurnCounts + "," +
+                partnerLenaVarsInContact.totalTurnCounts + "," +
+                subjectLenaVarsInContact.totalChildUttCount + "," +
+                partnerLenaVarsInContact.totalChildUttCount + "," +
+                subjectLenaVarsInContact.totalAdultWordCount + "," +
+                partnerLenaVarsInContact.totalAdultWordCount + "," +
+                subjectLenaVarsInContact.totalNoise + "," +
+                partnerLenaVarsInContact.totalNoise + "," +
+                subjectLenaVarsInContact.totalOLN + "," +
+                partnerLenaVarsInContact.totalOLN + "," +
+                subjectLenaVarsInContact.totalChildCryDuration + "," +
+                partnerLenaVarsInContact.totalChildCryDuration + "," +
+
+
+                pair.partnerJoinedCry + "," +
+                pair.subjectJoinedCry + "," +
+                pair.joinedCry + ",";
+
+                szSw += pair.pairProxDuration + "," +
+               pair.pairProxOriDuration + "," +
+               pair.sharedTimeInSecs + "," +
+               pair.partnerTotalTimeInSecs + "," +
+               pair.subjectTotalTimeInSecs + "," +
+
+
+               recSecs + "," +
+               subjectLenaVarsInWUBI.totalChildUttDuration + "," +
+               subjectLenaVarsInTotal.totalChildUttDuration + "," +
+               partnerLenaVarsInWUBI.totalChildUttDuration + "," +
+               partnerLenaVarsInTotal.totalChildUttDuration + "," +
+
+               subjectLenaVarsInWUBI.totalChildUttCount + "," +
+               subjectLenaVarsInTotal.totalChildUttCount + "," +
+               partnerLenaVarsInWUBI.totalChildUttCount + "," +
+               partnerLenaVarsInTotal.totalChildUttCount + "," +
+               subjectLenaVarsInWUBI.totalTurnCounts + "," +
+               subjectLenaVarsInTotal.totalTurnCounts + "," +
+               partnerLenaVarsInWUBI.totalTurnCounts + "," +
+               partnerLenaVarsInTotal.totalTurnCounts + "," +
+
+               subjectLenaVarsInWUBI.totalAdultWordCount + "," +
+               subjectLenaVarsInTotal.totalAdultWordCount + "," +
+               partnerLenaVarsInWUBI.totalAdultWordCount + "," +
+               partnerLenaVarsInTotal.totalAdultWordCount + "," +
+
+               subjectLenaVarsInWUBI.totalNoise + "," +
+               subjectLenaVarsInTotal.totalNoise + "," +
+               partnerLenaVarsInWUBI.totalNoise + "," +
+               partnerLenaVarsInTotal.totalNoise + "," +
+
+               subjectLenaVarsInWUBI.totalOLN + "," +
+               subjectLenaVarsInTotal.totalOLN + "," +
+               partnerLenaVarsInWUBI.totalOLN + "," +
+               partnerLenaVarsInTotal.totalOLN + "," +
+
+               subjectLenaVarsInWUBI.totalChildCryDuration + "," +
+               subjectLenaVarsInTotal.totalChildCryDuration + "," +
+               partnerLenaVarsInWUBI.totalChildCryDuration + "," +
+               partnerLenaVarsInTotal.totalChildCryDuration + "," +
+
+
+               (subjectLenaVarsInWUBI.avgDb != 0 && subjectLenaVarsInWUBI.totalSegments != 0 ? subjectLenaVarsInWUBI.avgDb / subjectLenaVarsInWUBI.totalSegments : 0.00).ToString() + "," +
+               (subjectLenaVarsInTotal.avgDb != 0 && subjectLenaVarsInTotal.totalSegments != 0 ? subjectLenaVarsInTotal.avgDb / subjectLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
+               (partnerLenaVarsInWUBI.avgDb != 0 && partnerLenaVarsInWUBI.totalSegments != 0 ? partnerLenaVarsInWUBI.avgDb / partnerLenaVarsInWUBI.totalSegments : 0.00).ToString() + "," +
+               (partnerLenaVarsInTotal.avgDb != 0 && partnerLenaVarsInTotal.totalSegments != 0 ? partnerLenaVarsInTotal.avgDb / partnerLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
+
+               (subjectLenaVarsInWUBI.maxDb != 0 && subjectLenaVarsInWUBI.totalSegments != 0 ? subjectLenaVarsInWUBI.maxDb / subjectLenaVarsInWUBI.totalSegments : 0.00).ToString() + "," +
+               (subjectLenaVarsInTotal.maxDb != 0 && subjectLenaVarsInTotal.totalSegments != 0 ? subjectLenaVarsInTotal.maxDb / subjectLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
+               (partnerLenaVarsInWUBI.maxDb != 0 && partnerLenaVarsInWUBI.totalSegments != 0 ? partnerLenaVarsInWUBI.maxDb / partnerLenaVarsInWUBI.totalSegments : 0.00).ToString() + "," +
+               (partnerLenaVarsInTotal.maxDb != 0 && partnerLenaVarsInTotal.totalSegments != 0 ? partnerLenaVarsInTotal.maxDb / partnerLenaVarsInTotal.totalSegments : 0.00).ToString() + "," +
+               className;
+                szSw += "," + subjectAliceVarsInContact.kchi + "," +
+                  partnerAliceVarsInContact.kchi + "," +
+                  subjectAliceVarsInContact.chi + "," +
+                  partnerAliceVarsInContact.chi + "," +
+                  subjectAliceVarsInContact.fem + "," +
+                  partnerAliceVarsInContact.fem + "," +
+                  subjectAliceVarsInContact.mal + "," +
+                  partnerAliceVarsInContact.mal + "," +
+                  subjectAliceVarsInContact.speech + "," +
+                  partnerAliceVarsInContact.speech + "," +
+
+                  subjectAliceVarsInWUBI.kchi + "," +
+                  subjectAliceVarsInTotal.kchi + "," +
+                  partnerAliceVarsInWUBI.kchi + "," +
+                  partnerAliceVarsInTotal.kchi + "," +
+
+                  subjectAliceVarsInWUBI.chi + "," +
+                  subjectAliceVarsInTotal.chi + "," +
+                  partnerAliceVarsInWUBI.chi + "," +
+                  partnerAliceVarsInTotal.chi + "," +
+
+                  subjectAliceVarsInWUBI.fem + "," +
+                  subjectAliceVarsInTotal.fem + "," +
+                  partnerAliceVarsInWUBI.fem + "," +
+                  partnerAliceVarsInTotal.fem + "," +
+
+                  subjectAliceVarsInWUBI.mal + "," +
+                  subjectAliceVarsInTotal.mal + "," +
+                  partnerAliceVarsInWUBI.mal + "," +
+                  partnerAliceVarsInTotal.mal + "," +
+
+                  subjectAliceVarsInWUBI.speech + "," +
+                  subjectAliceVarsInTotal.speech + "," +
+                  partnerAliceVarsInWUBI.speech + "," +
+                  partnerAliceVarsInTotal.speech;
                 sw.WriteLine(szSw);
 
 
@@ -795,15 +1224,15 @@ namespace UL_Processor_V2023
                                         {
                                             columnIndex["LONGID"] = cp;
                                         }
-                                        else if (header.ToUpper().Trim().Contains("LEFT") && header.ToUpper().Trim().Contains("TAG"))
+                                        else if (header.ToUpper().Trim().Contains("LEFT") && (header.ToUpper().Trim().Contains("TAG") || header.ToUpper().Trim().Contains("UBI")))
                                         {
                                             columnIndex["LEFT"] = cp;
                                         }
-                                        else if (header.ToUpper().Trim().Contains("RIGHT") && header.ToUpper().Trim().Contains("TAG"))
+                                        else if (header.ToUpper().Trim().Contains("RIGHT") && (header.ToUpper().Trim().Contains("TAG") || header.ToUpper().Trim().Contains("UBI")))
                                         {
                                             columnIndex["RIGHT"] = cp;
                                         }
-                                        else if (header.ToUpper().Trim().Contains("LENA") && header.ToUpper().Trim().Contains("ID"))
+                                        else if (header.ToUpper().Trim()=="LENA"||(header.ToUpper().Trim().Contains("LENA") && header.ToUpper().Trim().Contains("ID")))
                                         {
                                             columnIndex["LENA"] = cp;
                                         }
@@ -833,12 +1262,13 @@ namespace UL_Processor_V2023
                             {
                                 String commaLine = sr.ReadLine();
                                 String[] line = commaLine.Split(',');
-                                if (line.Length > 16 && line[1] != "")
+                                if (line.Length > 7 && line[1] != "")
                                 {
                                     //Person person = personMappings[mapById];//new Person(commaLine, mapById, new List<int>(), new List<int>(),Person.columnIndex);
-                                    if (personMappings.ContainsKey(line[columnIndex["LONGID"]]))
+                                    if (personMappings.ContainsKey(line[columnIndex["LONGID"]].Trim().ToUpper()))
                                     {
-                                        Person person = personMappings[line[columnIndex["LONGID"]]];
+                                        
+                                        Person person = personMappings[line[columnIndex["LONGID"]].ToUpper()];
                                         PersonDayInfo personDayInfo = new PersonDayInfo(commaLine, person.mapId, new DateTime(classDay.Year, classDay.Month, classDay.Day, startHour, 0, 0), new DateTime(classDay.Year, classDay.Month, classDay.Day, endHour, endMinute, 0), columnIndex);
                                         if (!personDayMappings.ContainsKey(person.mapId))
                                             personDayMappings.Add(person.mapId, personDayInfo);
@@ -915,7 +1345,7 @@ namespace UL_Processor_V2023
 
                             2022 - 01-28 08:58:00.200,1.3800916038677513,4.36540153126917,0.4596901265437715,0.9715147678818095,4.272437575392713,0.544450214826891,2.917870339559073,0.41901948402966077,1.1758031858747804,4.318919553330941,0.5020701706853312,2.917870339559072,1.3800916038677513,4.36540153126917,0.9715147678818095,4.272437575392712,0.41901948402966077,1.1758031858747804,4.318919553330941*/
 
-                            while (!sr.EndOfStream)
+                while (!sr.EndOfStream)
                             {
                                 String szLine = sr.ReadLine();
                                 String[] lineCols = szLine.Split(',');
@@ -2033,7 +2463,7 @@ namespace UL_Processor_V2023
                                     if(lenaBeepOnset==0)
                                     foreach(String itsFileName in lenaStartTimes.Keys)
                                     {
-                                            if(itsFileName== line[1].Trim())
+                                            if(itsFileName== line[1].Trim().Replace(".wav", ".its"))
                                             {
                                                 szLenaSubjectFound = lenaStartTimes[itsFileName].Item1;
                                                 lenaBeepOnset = Convert.ToDouble(line[2]);
@@ -2101,10 +2531,12 @@ namespace UL_Processor_V2023
                                     DateTime startTime = sonyStartTimes[subject];
                                     int ms = startTime.Millisecond > 0 ? startTime.Millisecond / 100 * 100 : startTime.Millisecond;// + 100;
                                     startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, startTime.Minute, startTime.Second, ms);
+                                    startTime=startTime.AddSeconds(Convert.ToDouble(szSartTime));
                                     DateTime timeEnd = startTime.AddSeconds(blockDur);
                                     ms = timeEnd.Millisecond > 0 ? timeEnd.Millisecond / 100 * 100 : timeEnd.Millisecond;// + 100;
                                     timeEnd = new DateTime(timeEnd.Year, timeEnd.Month, timeEnd.Day, timeEnd.Hour, timeEnd.Minute, timeEnd.Second, ms);
                                     DateTime time = startTime;
+                                     
                                     do
                                     {
                                         /*PersonDayInfo pdi = getPersonInfoByLena(szLenaId);
@@ -2114,6 +2546,12 @@ namespace UL_Processor_V2023
                                             time <= pdi.endDate)
                                         {
                                             Boolean WUBI = ubiTenths.ContainsKey(time) && ubiTenths[time].ContainsKey(subject);
+                                            if (WUBI)
+                                            {
+                                                bool stop = true;
+                                            }
+                                            
+                                            
                                             switch (szType)
                                             {
                                                 case "KCHI":
@@ -2163,7 +2601,11 @@ namespace UL_Processor_V2023
                                             blockDur = Math.Round(blockDur - 0.1, 2);
                                         } while (blockDur > 0) ;
                                     }
-                                catch { }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e.Message);
+                                
+                                }
                                     /*DateTime time = lenaOnset.startTime;
                         int ms = time.Millisecond > 0 ? time.Millisecond / 100 * 100 : time.Millisecond;// + 100;
                         time = new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, ms);

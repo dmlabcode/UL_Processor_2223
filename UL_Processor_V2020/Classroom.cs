@@ -4,14 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using static IronPython.Modules._ast;
+using System.Xml;
+
 namespace UL_Processor_V2023
 {
     class Classroom
     {
+        public Boolean justPLS = false;
         public Boolean ubiCleanup = false;
         public Boolean doRecInfo = true;
         public Boolean processData = true;
         public Boolean reDenoise = false;
+        public Boolean includeAlice = false;
         public String dir = "";
         public String className = "";
         public double grMin = 0;
@@ -113,6 +118,19 @@ namespace UL_Processor_V2023
             String mappingBaseFileName = dir + "//MAPPING_" + className + "_BASE.CSV";
             List<int> dList = new List<int>();
             List<int> lList = new List<int>();
+            Dictionary<String, int> columnIndexBase = new Dictionary<string, int>();
+            columnIndexBase.Add("LONGID", -1);
+            columnIndexBase.Add("SHORTID", -1);
+            columnIndexBase.Add("TYPE", -1);
+            columnIndexBase.Add("DOB", -1);
+            columnIndexBase.Add("SEX", -1);
+
+            columnIndexBase.Add("PREPLSDATE", -1);
+            columnIndexBase.Add("PREPLSLENA", -1);
+            columnIndexBase.Add("POSTPLSDATE", -1);
+            columnIndexBase.Add("POSTPLSLENA", -1);
+
+
             if (File.Exists(mappingBaseFileName))
                 using (StreamReader sr = new StreamReader(mappingBaseFileName))
                 {
@@ -128,10 +146,55 @@ namespace UL_Processor_V2023
                                 diagnosisList.Add(szCol.Trim());
                                 dList.Add(cp);
                             }
-                            if (szCol.ToUpper().Trim().Contains("LANGUAGE"))
+                            else if (szCol.ToUpper().Trim().Contains("LANGUAGE"))
                             {
                                 languagesList.Add(szCol.Trim());
                                 lList.Add(cp);
+                            }
+                            else if (szCol.ToUpper().Trim().Contains("ID") && (szCol.ToUpper().Trim().Contains("SUBJECT")|| szCol.ToUpper().Trim().Contains("LONG")))
+                            {
+                                columnIndexBase["LONGID"] = cp;
+                            }
+                            else if (szCol.ToUpper().Trim().Contains("ID") && szCol.ToUpper().Trim().Contains("SHORT"))
+                            {
+                                columnIndexBase["SHORTID"] = cp;
+                            }
+                            else if (szCol.ToUpper().Trim().Contains("TYPE")  )
+                            {
+                                columnIndexBase["TYPE"] = cp;
+                            }
+                            else if (szCol.ToUpper().Trim().Contains("DOB"))
+                            {
+                                columnIndexBase["DOB"] = cp;
+                            }
+                            else if (szCol.ToUpper().Trim().Contains("SEX") || szCol.ToUpper().Trim().Contains("GENDER"))
+                            {
+                                columnIndexBase["SEX"] = cp;
+                            }
+                            else if (szCol.ToUpper().Trim().Contains("PLS"))
+                            {
+                                if (szCol.ToUpper().Trim().Contains("PRE"))
+                                {
+                                    if (szCol.ToUpper().Trim().Contains("DATE"))
+                                    {
+                                        columnIndexBase["PREPLSDATE"] = cp;
+                                    }
+                                    else if (szCol.ToUpper().Trim().Contains("LENA"))
+                                    {
+                                        columnIndexBase["PREPLSLENA"] = cp;
+                                    }
+                                }
+                                else if (szCol.ToUpper().Trim().Contains("POST"))
+                                {
+                                    if (szCol.ToUpper().Trim().Contains("DATE"))
+                                    {
+                                        columnIndexBase["POSTPLSDATE"] = cp;
+                                    }
+                                    else if (szCol.ToUpper().Trim().Contains("LENA"))
+                                    {
+                                        columnIndexBase["POSTPLSLENA"] = cp;
+                                    }
+                                }
                             }
                             cp++;
 
@@ -143,11 +206,11 @@ namespace UL_Processor_V2023
                     {
                         String commaLine = sr.ReadLine();
                         String[] line = commaLine.Split(',');
-                        if (line.Length > 16 && line[1] != "")
+                        if (line.Length > 5 && line[1] != "")
                         {
-                            Person person = new Person(commaLine, mapById, dList,lList);//longid
-
-                            if (!personBaseMappings.ContainsKey(person.mapId))
+                            Person person = new Person(commaLine, mapById, dList,lList,columnIndexBase);//longid
+                             
+                            if (person.mapId != "" && (!personBaseMappings.ContainsKey(person.mapId)))
                             {
                                 personBaseMappings.Add(person.mapId, person);
                             }
@@ -157,6 +220,10 @@ namespace UL_Processor_V2023
                 }
         }
         public void setDirs()
+        {
+            dir = dir + className;
+        }
+        public void createReportDirs()
         {
             dir = dir + className;
             if (!Directory.Exists(dir + "//SYNC"))
@@ -188,7 +255,7 @@ namespace UL_Processor_V2023
             filesToMerge.Add("SOCIALONSETS", new List<string>());
 
         }
-        public void clean()
+        public void cleanUbiFiles()
         {
             foreach (DateTime day in classRoomDays)
             {
@@ -236,7 +303,362 @@ namespace UL_Processor_V2023
 
         }
         
-        
+        public void writePLSOnsets(TextWriter sw, String PLStype, String PLSLENA, String PLSDay, Person pi)
+        {
+
+            try
+            {
+                String[] files = Directory.GetFiles(dir + "//PLS//", "*.its", SearchOption.AllDirectories);
+                DateTime classDay= Convert.ToDateTime(PLSDay);
+
+                foreach (string itsFile in files)
+                {
+                    double testTc = 0;
+                    String szLenaId = Utilities.getLenaIdFromFileName(Path.GetFileName(itsFile));
+                    if (szLenaId == PLSLENA)
+                    { 
+                        XmlDocument doc = new XmlDocument();
+                    doc.Load(itsFile);
+                    XmlNodeList rec = doc.ChildNodes[0].SelectNodes("ProcessingUnit/Recording");
+                    double convId = 0;
+                    foreach (XmlNode recording in rec)
+                    {
+
+                        double recStartSecs = Convert.ToDouble(recording.Attributes["startTime"].Value.Substring(2, recording.Attributes["startTime"].Value.Length - 3));
+                        DateTime recStartTime = DateTime.Parse(recording.Attributes["startClockTime"].Value);
+                        var est = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+                        recStartTime = TimeZoneInfo.ConvertTime(recStartTime, est);
+
+                        XmlNodeList nodes = recording.SelectNodes("Conversation|Pause");
+                        
+                        //if (pdi.mapId != "")
+                        {
+                             
+                            if (Utilities.isSameDay(recStartTime, classDay) &&
+                                    recStartTime.Hour >= startHour &&
+                                    (recStartTime.Hour < endHour ||
+                                        (recStartTime.Hour == endHour &&
+                                            recStartTime.Minute <= endMinute
+                                        )
+                                    )
+                                )
+                            {
+
+                                foreach (XmlNode conv in nodes)
+                                {
+                                    convId++;
+                                    XmlNodeList segments = conv.SelectNodes("Segment");
+                                    double startSecs = Convert.ToDouble(conv.Attributes["startTime"].Value.Substring(2, conv.Attributes["startTime"].Value.Length - 3)) - recStartSecs;
+                                    double endSecs = Convert.ToDouble(conv.Attributes["endTime"].Value.Substring(2, conv.Attributes["endTime"].Value.Length - 3)) - recStartSecs;
+                                    DateTime start = Utilities.geFullTime(recStartTime.AddSeconds(startSecs));
+                                    DateTime end = Utilities.geFullTime(recStartTime.AddSeconds(endSecs));
+                                    double dbAvg = Convert.ToDouble(conv.Attributes["average_dB"].Value);
+                                    double dbPeak = Convert.ToDouble(conv.Attributes["peak_dB"].Value);
+                                    double bdSecs = (end - start).Seconds;
+                                    double bdMilliseconds = (end - start).Milliseconds > 0 ? ((end - start).Milliseconds / 1000.00) : 0.00;
+                                    double bd = bdSecs + bdMilliseconds;
+                                     
+                                    if (Utilities.isSameDay(start, classDay))
+                                    {
+                                        if (conv.Name == "Conversation")
+                                        {
+                                            double tc = Convert.ToDouble(conv.Attributes["turnTaking"].Value); ;
+
+                                           
+                                            sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                            classDay + "," +
+                                                                            pi.shortId + "," +
+                                                                            PLSLENA + "," +
+                                                                            pi.subjectType + "," +
+                                                                            convId +
+                                                                            ",Conversation_turnTaking," +
+                                                                            Utilities.getTimeStr(recStartTime) + "," +
+                                                                            startSecs + "," +
+                                                                            endSecs + "," +
+                                                                            Utilities.getTimeStr(start) + "," +
+                                                                            Utilities.getTimeStr(end) + "," +
+                                                                            String.Format("{0:0.00}", 0) + "," +
+                                                                            String.Format("{0:0.00}", bd) + "," +
+                                                                            "," +
+                                                                            String.Format("{0:0.00}", dbAvg) + "," +
+                                                                            String.Format("{0:0.00}", dbPeak) + "," +
+                                                                            String.Format("{0:0.00}", tc)+","+ PLStype);
+                                             
+                                        }
+
+
+                                        foreach (XmlNode seg in segments)
+                                        {
+
+                                            startSecs = Convert.ToDouble(seg.Attributes["startTime"].Value.Substring(2, seg.Attributes["startTime"].Value.Length - 3)) - recStartSecs;
+                                            endSecs = Convert.ToDouble(seg.Attributes["endTime"].Value.Substring(2, seg.Attributes["endTime"].Value.Length - 3)) - recStartSecs;
+                                            start = Utilities.geFullTime(recStartTime.AddMilliseconds(startSecs * 1000));
+                                            end = Utilities.geFullTime(recStartTime.AddMilliseconds(endSecs * 1000));
+
+
+                                            bd = (end - start).Seconds + ((end - start).Milliseconds > 0 ? ((end - start).Milliseconds / 1000.00) : 0); //endSecs - startSecs;
+                                            dbAvg = Convert.ToDouble(seg.Attributes["average_dB"].Value);
+                                            dbPeak = Convert.ToDouble(seg.Attributes["peak_dB"].Value);
+                                            String speaker = seg.Attributes["spkr"].Value;
+                                                 
+
+                                            switch (speaker)
+                                            {
+                                                case "CHN":
+                                                case "CHF":
+                                                     
+                                                    double pivd = Convert.ToDouble(seg.Attributes["childUttLen"].Value.Substring(1, seg.Attributes["childUttLen"].Value.Length - 2));
+                                                    double pivc = Convert.ToDouble(seg.Attributes["childUttCnt"].Value);
+                                                    sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                            classDay + "," +
+                                                                            pi.shortId + "," +
+                                                                            PLSLENA + "," +
+                                                                            pi.subjectType + "," +
+                                                                            convId +
+                                                                            ",CHN_CHF SegmentUttCount," +
+                                                                            Utilities.getTimeStr(recStartTime) + "," +
+                                                                            startSecs + "," +
+                                                                            endSecs + "," +
+                                                                            Utilities.getTimeStr(start) + "," +
+                                                                            Utilities.getTimeStr(end) + "," +
+                                                                            String.Format("{0:0.00}", pivd) + "," +
+                                                                            String.Format("{0:0.00}", bd) + "," +
+                                                                            "," +
+                                                                            String.Format("{0:0.00}", dbAvg) + "," +
+                                                                            String.Format("{0:0.00}", dbPeak) + ",,"+PLStype);
+
+                                                  
+                                                    foreach (XmlAttribute atts in seg.Attributes)
+                                                    {
+                                                        if (atts.Name.IndexOf("startCry") == 0)
+                                                        {
+                                                            String attStep = atts.Name.Substring(8);
+                                                            String att = atts.Name;
+                                                            double astartSecs = Convert.ToDouble(seg.Attributes[att].Value.Substring(2, seg.Attributes[att].Value.Length - 3)) - recStartSecs;
+                                                            double aendSecs = Convert.ToDouble(seg.Attributes["endCry" + attStep].Value.Substring(2, seg.Attributes["endCry" + attStep].Value.Length - 3)) - recStartSecs;
+                                                            DateTime astart = Utilities.geFullTime(recStartTime.AddMilliseconds(astartSecs * 1000));
+                                                            DateTime aend = Utilities.geFullTime(recStartTime.AddMilliseconds(aendSecs * 1000));
+                                                            double apicry = (aend - astart).Seconds + ((aend - astart).Milliseconds > 0 ? (aend - astart).Milliseconds / 1000.00 : 0); //cendSecs - cstartSecs;
+
+                                                            sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                        classDay + "," +
+                                                                        pi.shortId + "," +
+                                                                        PLSLENA + "," +
+                                                                        pi.subjectType + "," +
+                                                                        convId +
+                                                                        ",CHN_CHF CryDur," +
+                                                                        Utilities.getTimeStr(recStartTime) + "," +
+                                                                        astartSecs + "," +
+                                                                        aendSecs + "," +
+                                                                        Utilities.getTimeStr(astart) + "," +
+                                                                        Utilities.getTimeStr(aend) + "," +
+                                                                        String.Format("{0:0.00}", apicry) + "," +
+                                                                        String.Format("{0:0.00}", bd) + "," +
+                                                                        "," +
+                                                                        "," +
+                                                                        "," + ","+PLStype); //String.Format("{0:0.00}", dbPeak) + ",");
+
+                                                                 
+                                                        }
+                                                        else if (atts.Name.IndexOf("startUtt") == 0)
+                                                        {
+                                                            String attStep = atts.Name.Substring(8);
+                                                            String att = atts.Name;
+                                                            double astartSecs = Convert.ToDouble(seg.Attributes[att].Value.Substring(2, seg.Attributes[att].Value.Length - 3)) - recStartSecs;
+                                                            double aendSecs = Convert.ToDouble(seg.Attributes["endUtt" + attStep].Value.Substring(2, seg.Attributes["endUtt" + attStep].Value.Length - 3)) - recStartSecs;
+                                                            DateTime astart = Utilities.geFullTime(recStartTime.AddMilliseconds(astartSecs * 1000));
+                                                            DateTime aend = Utilities.geFullTime(recStartTime.AddMilliseconds(aendSecs * 1000));
+                                                            double apiutts = (aend - astart).Seconds + ((aend - astart).Milliseconds > 0 ? (aend - astart).Milliseconds / 1000.00 : 0); //cendSecs - cstartSecs;
+                                                            sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                        classDay + "," +
+                                                                        pi.shortId + "," +
+                                                                        PLSLENA + "," +
+                                                                        pi.subjectType + "," +
+                                                                        convId +
+                                                                        ",CHN_CHF UttDur," +
+                                                                        Utilities.getTimeStr(recStartTime) + "," +
+                                                                        astartSecs + "," +
+                                                                        aendSecs + "," +
+                                                                        Utilities.getTimeStr(astart) + "," +
+                                                                        Utilities.getTimeStr(aend) + "," +
+                                                                        String.Format("{0:0.00}", apiutts) + "," +
+                                                                        String.Format("{0:0.00}", bd) + "," +
+                                                                        "," +
+                                                                        "," +
+                                                                        "," + ","+PLStype);   //String.Format("{0:0.00}", dbPeak) + ",");
+
+                                                            
+                                                        }
+                                                    }
+                                                    break;
+                                                case "FAN":
+                                                case "MAN":
+                                                    Boolean isFemale = speaker == "FAN";
+                                                    double piac = isFemale ? Convert.ToDouble(seg.Attributes["femaleAdultWordCnt"].Value) : Convert.ToDouble(seg.Attributes["maleAdultWordCnt"].Value);
+                                                    double piad = isFemale ? Convert.ToDouble(seg.Attributes["femaleAdultUttLen"].Value.Substring(1, seg.Attributes["femaleAdultUttLen"].Value.Length - 2)) : Convert.ToDouble(seg.Attributes["maleAdultUttLen"].Value.Substring(1, seg.Attributes["maleAdultUttLen"].Value.Length - 2));
+                                                    piad = bd;
+                                                    sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                        classDay + "," +
+                                                                        pi.shortId + "," +
+                                                                        PLSLENA + "," +
+                                                                        pi.subjectType + "," +
+                                                                        convId +
+                                                                        (isFemale ? ",FAN SegmentUtt," : ",MAN SegmentUtt,") +
+                                                                        Utilities.getTimeStr(recStartTime) + "," +
+                                                                        startSecs + "," +
+                                                                        endSecs + "," +
+                                                                        Utilities.getTimeStr(start) + "," +
+                                                                        Utilities.getTimeStr(end) + "," +
+                                                                        String.Format("{0:0.00}", piad) + "," +
+                                                                        String.Format("{0:0.00}", bd) + "," +
+                                                                        String.Format("{0:0.00}", piac) + "," +
+                                                                        String.Format("{0:0.00}", dbAvg) + "," +
+                                                                        String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+
+                                                  
+
+                                                    break;
+
+
+                                                case "CXN":
+                                                case "CXF":
+                                                    sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                         classDay + "," +
+                                                                         pi.shortId + "," +
+                                                                         PLSLENA + "," +
+                                                                         pi.subjectType + "," +
+                                                                         convId +
+                                                                         ",CXN_CXF SegmentUttDur," +
+                                                                         Utilities.getTimeStr(recStartTime) + "," +
+                                                                         startSecs + "," +
+                                                                         endSecs + "," +
+                                                                         Utilities.getTimeStr(start) + "," +
+                                                                         Utilities.getTimeStr(end) + "," +
+                                                                         String.Format("{0:0.00}", 0) + "," +
+                                                                         String.Format("{0:0.00}", bd) + "," +
+                                                                         "0.00," +
+                                                                         String.Format("{0:0.00}", dbAvg) + "," +
+                                                                         String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+
+                                                   
+                                                    break;
+                                                case "OLN":
+                                                    sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                        classDay + "," +
+                                                                        pi.shortId + "," +
+                                                                        PLSLENA + "," +
+                                                                        pi.subjectType + "," +
+                                                                        convId +
+                                                                        ",OLN Dur," +
+                                                                        Utilities.getTimeStr(recStartTime) + "," +
+                                                                        startSecs + "," +
+                                                                        endSecs + "," +
+                                                                        Utilities.getTimeStr(start) + "," +
+                                                                        Utilities.getTimeStr(end) + "," +
+                                                                        String.Format("{0:0.00}", 0) + "," +
+                                                                        String.Format("{0:0.00}", bd) + "," +
+                                                                        "0.00," +
+                                                                        String.Format("{0:0.00}", dbAvg) + "," +
+                                                                        String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+ 
+
+                                                    break;
+                                                case "NON":
+                                                    sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                       classDay + "," +
+                                                                       pi.shortId + "," +
+                                                                       PLSLENA + "," +
+                                                                       pi.subjectType + "," +
+                                                                       convId +
+                                                                       ",NON Dur," +
+                                                                       Utilities.getTimeStr(recStartTime) + "," +
+                                                                       startSecs + "," +
+                                                                       endSecs + "," +
+                                                                       Utilities.getTimeStr(start) + "," +
+                                                                       Utilities.getTimeStr(end) + "," +
+                                                                       String.Format("{0:0.00}", 0) + "," +
+                                                                       String.Format("{0:0.00}", bd) + "," +
+                                                                       "0.00," +
+                                                                       String.Format("{0:0.00}", dbAvg) + "," +
+                                                                       String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+
+                                                    
+                                                    break;
+
+                                                default:
+                                                    sw.WriteLine(Path.GetFileName(itsFile) + "," +
+                                                                       classDay + "," +
+                                                                       pi.shortId + "," +
+                                                                       PLSLENA + "," +
+                                                                       pi.subjectType + "," +
+                                                                       convId + "," +
+                                                                       speaker + "," +
+                                                                       Utilities.getTimeStr(recStartTime) + "," +
+                                                                       startSecs + "," +
+                                                                       endSecs + "," +
+                                                                       Utilities.getTimeStr(start) + "," +
+                                                                       Utilities.getTimeStr(end) + "," +
+                                                                       String.Format("{0:0.00}", bd) + "," +
+                                                                       String.Format("{0:0.00}", bd) + "," +
+                                                                       String.Format("{0:0.00}", 0) + "," +
+                                                                       String.Format("{0:0.00}", dbAvg) + "," +
+                                                                       String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+                                                        break;
+
+
+                                            }
+                                        }
+                                    }
+                                     
+
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+                }
+            }
+            catch (Exception e)
+            {
+
+
+            }
+             
+        }
+        public void processPLSs()
+        {
+
+            //ONSETS
+            String szOnsetOutputFile = dir + "//PLSONSETS_" + "_" + Utilities.szVersion + ".CSV";
+            TextWriter sw= new StreamWriter(szOnsetOutputFile);
+            sw.WriteLine("File,Date,Subject,LenaID,SubjectType,ConversationId," +
+               "voctype,recstart,startsec,endsec,starttime,endtime,duration," +
+               "seg_duration,wordcount,avg_db,avg_peak,turn_taking," +
+               "PLS_Type");//,children,teachers");
+            foreach (Person pi in personBaseMappings.Values)
+            {
+                String[] preLENAS = pi.prePLSLENA.Split('|');
+                String[] postLENAS = pi.postPLSLENA.Split('|');
+                String[] preDates = pi.prePLSDay.Split('|');
+                String[] postDates = pi.postPLSDay.Split('|');
+                int p = 0;
+                foreach (String l in preLENAS)
+                {
+                    writePLSOnsets(sw, "PRE", l, preDates.Length > 0 ? preDates[p] : preDates[0],pi);
+
+                }
+                p = 0;
+                foreach (String l in postLENAS)
+                {
+                    writePLSOnsets(sw, "POST", l, postDates.Length > 0 ? postDates[p] : postDates[0],pi);
+
+                }
+            }
+            sw.Close();
+
+        }
         public void process(Boolean all,Boolean tenSecs)
         {
             makeDayReportLists();
@@ -266,7 +688,7 @@ namespace UL_Processor_V2023
                 if (all || tenSecs)
                 {
 
-                    classRoomDay.setTenthOfSecALICE(dir, className, lenaStartTimes);
+                  //  classRoomDay.setTenthOfSecALICE(dir, className, lenaStartTimes);
 
                     classRoomDay.setTenthOfSecLENA();
                     szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
@@ -286,6 +708,7 @@ namespace UL_Processor_V2023
                     //*PAIRACTIVITY REPORT*/
                     String szPairActOutputFile = dir + "//SYNC//PAIRACTIVITY//PAIRACTIVITY_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                     classRoomDay.writePairActivityData(pairs, className, szPairActOutputFile, this.diagnosisList, this.languagesList);
+                    //classRoomDay.writePairActivityDatawAlice(pairs, className, szPairActOutputFile, this.diagnosisList, this.languagesList);
                  //   classRoomDay.writePairActivityData(pairs, className, szPairActOutputFile.Replace(".","_ACT."), this.diagnosisList, this.languagesList, activityTypes);
                     
                     filesToMerge["PAIRACTIVITIES"].Add(szPairActOutputFile);
