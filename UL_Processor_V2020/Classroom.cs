@@ -225,7 +225,6 @@ namespace UL_Processor_V2023
         }
         public void createReportDirs()
         {
-            dir = dir + className;
             if (!Directory.Exists(dir + "//SYNC"))
                 Directory.CreateDirectory(dir + "//SYNC");
             if (!Directory.Exists(dir + "//SYNC//ONSETS"))

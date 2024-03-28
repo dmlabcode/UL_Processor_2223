@@ -77,16 +77,98 @@ namespace UL_Processor_V2023
                    "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:ES_ROOM8_2223 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
                    "10/25/2022,11/15/2022"+
                    szClassroomSettings};
-
-          */
-            String szClassroomSettings = " REDENOISE:NO PROCESS:YES JUSTPLS:YES";
-
-
-            String[] szClassroomsToProcess = {
-                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:Turtles_2223"+
+              String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:LEAP_AM_2223"+
                    szClassroomSettings};
 
 
+             String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2324// CLASSNAME:AppleTree_2324 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   "10/26/2023"+
+                   szClassroomSettings};
+
+              String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2324// CLASSNAME:AppleTree_2324 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   "09/28/2023,10/26/2023,11/30/2023,12/12/2023,01/25/2024"+
+                   szClassroomSettings};
+
+             String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:LittleFish_2223 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   //"09-19-2022,09-21-2022,10-03-2022,10-04-2022,11-07-2022,01-09-2023,01-11-2023,02-24-2023,03-27-2023,03-29-2023,04-10-2023,04-12-2023,06-29-2023,07-20-2023"+
+                   "09-19-2022,09-21-2022,10-03-2022,10-04-2022,11-07-2022,01-09-2023,01-11-2023,02-24-2023,03-27-2023,03-29-2023,04-10-2023,04-12-2023,06-29-2023,07-20-2023"+
+                    szClassroomSettings};
+
+             String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2324// CLASSNAME:AppleTree_2324 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   "10/26/2023"+
+                   szClassroomSettings};
+
+             String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:ES_ROOM4_2223 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   "09/19/2022,09/21/2022,10/18/2022,10/20/2022,12/08/2022,12/09/2022,02/01/2023,02/09/2023,03/16/2023,03/17/2023,04/27/2023,04/28/2023,05/23/2023,05/25/2023"+
+                   szClassroomSettings};
+
+             String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:LittleFish_2223 GRMIN:0.2 GRMAX:1.5 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   //"09-19-2022,09-21-2022,10-03-2022,10-04-2022,11-07-2022,01-09-2023,01-11-2023,02-24-2023,03-27-2023,03-29-2023,04-10-2023,04-12-2023,06-29-2023,07-20-2023"+
+                   "10-04-2022,02-24-2023,03-27-2023,03-29-2023,04-10-2023,04-12-2023"+
+                    szClassroomSettings};
+
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:Room4_2223 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   "09/21/2022,10/18/2022,10/20/2022,12/08/2022,12/09/2022,02/01/2023,02/09/2023,03/16/2023,03/17/2023,04/27/2023,04/28/2023,05/25/2023"+
+                   szClassroomSettings};
+
+              
+
+
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:LEAP_PM_2223 GRMIN:0.2 GRMAX:2 HRMIN:11 HRMAX:13 MINMAX:50 DAYS:" +
+                   "10/06/2022"+
+                   ",10/07/2022"+
+                   ",11/29/2022,12/12/2022,12/14/2022,"+
+                   "01/24/2023,01/26/2023,02/08/2023"+
+                   ","+
+                   "02/10/2023"+
+                   ","+
+                   "03/08/2023"+
+                   ",03/10/2023"+
+                   ",04/04/2023,04/06/2023,05/16/2023"+//,10/07/2022,11/29/2022,12/12/2022,12/14/2022" +
+                   szClassroomSettings};
+
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:Avengers_2223 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   "09/20/2022,09/22/2022,11/01/2022,12/13/2022,01/12/2023,01/13/2023,02/14/2023,02/16/2023,03/13/2023,03/14/2023,04/04/2023,04/06/2023,05/16/2023,05/18/2023"+
+                   szClassroomSettings};
+
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:Turtles_2223 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   "10/17/2022,10/19/2022,11/17/2022,12/06/2022,02/28/2023,03/02/2023,03/08/2023,03/10/2023,04/11/2023,04/14/2023,05/009/2023,05/10/2023,06/01/2023,06/02/2023"+
+                   szClassroomSettings};
+
+            
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:Turtles_2223 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+                   "10/17/2022,10/19/2022,11/17/2022,12/06/2022,02/28/2023,03/02/2023,03/08/2023,03/10/2023,04/11/2023,04/14/2023,05/09/2023,05/10/2023,06/01/2023,06/02/2023"+
+                   szClassroomSettings};
+
+          */
+            String szClassroomSettings = " REDENOISE:YES PROCESS:YES JUSTPLS:NO";
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:LEAP_PM_2223 GRMIN:0.2 GRMAX:2 HRMIN:11 HRMAX:13 MINMAX:50 DAYS:" +
+                   "10/06/2022"+
+                   ",10/07/2022"+
+                   ",11/29/2022,12/12/2022,12/14/2022,"+
+                   "01/24/2023,01/26/2023,02/08/2023"+
+                   ","+
+                   "02/10/2023"+
+                   ","+
+                   "03/08/2023"+
+                   ",03/10/2023"+
+                   ",04/04/2023,04/06/2023,05/16/2023"+//,10/07/2022,11/29/2022,12/12/2022,12/14/2022" +
+                   szClassroomSettings};
+
+            //ADD 5/18 01-26-2023
 
             /******** A)FOR EACH CLASSROOM:********/
             foreach (String szClassroomArgs in szClassroomsToProcess)

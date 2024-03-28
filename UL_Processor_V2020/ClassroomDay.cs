@@ -840,6 +840,31 @@ namespace UL_Processor_V2023
              
             TextWriter sw = doAngles ? new StreamWriter(szAngleOutputFile) : null;
             TextWriter swapp = doApp ? new StreamWriter(szAppOutputFile) : null;
+
+            //DEBUG DELETE ELAN INTERACTIONS
+            /* Time frame is 9:46:53 AM - 10:29:53
+            Subject 2 (9:46:58-9:52:12)
+            Subject 9 (9:52:12-9:57:35)
+            Subject 7 (9:57:35-10:02:57)
+            Subject 6 (10:02:57-10:08:09)
+            Subject 10 (10:08:09-10:13:28)
+            Subject 8 (10:13:28-10:18:46)
+            Subject 5 (10:18:46-10:24:42)
+            Subject 1 (10:24:42-10:29:53)*/
+
+            TextWriter swi = new StreamWriter(szAngleOutputFile.Replace(".CSV","INTERACTIONS.CSV"));
+            swi.WriteLine("Person 1, Person2, Interaction Time, Interaction Millisecond, Interaction, " + angle + "Interaction, WasTalking1, WasTalking2 ");
+            Dictionary<String, Tuple<DateTime, DateTime>> filters = new Dictionary<string, Tuple<DateTime, DateTime>>();
+            filters.Add("LRIC_APPLETREE_2324_2", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 9, 46, 58), new DateTime(2023, 10, 26, 9, 52, 12)));
+            filters.Add("LRIC_APPLETREE_2324_9", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 9, 52, 12), new DateTime(2023, 10, 26, 9, 57, 35)));
+            filters.Add("LRIC_APPLETREE_2324_7", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 9, 57, 35), new DateTime(2023, 10, 26, 9, 02, 57)));
+            filters.Add("LRIC_APPLETREE_2324_6", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 10, 02, 57), new DateTime(2023, 10, 26, 9, 08, 09)));
+            filters.Add("LRIC_APPLETREE_2324_10", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 10, 08, 09), new DateTime(2023, 10, 26, 9, 13, 28)));
+            filters.Add("LRIC_APPLETREE_2324_8", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 10, 13, 28), new DateTime(2023, 10, 26, 9, 18, 46)));
+            filters.Add("LRIC_APPLETREE_2324_5", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 10, 18, 46), new DateTime(2023, 10, 26, 9, 24, 42)));
+            filters.Add("LRIC_APPLETREE_2324_1", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 10, 24, 42), new DateTime(2023, 10, 26, 9, 29, 53)));
+            //DEBUG DELETE ELAN INTERACTIONS
+
             if (doAngles)
                 sw.WriteLine("Person 1, Person2, Interaction Time, Interaction Millisecond, Interaction, " + angle + "Interaction, Angle1, Angle2, Leftx,Lefty,Rightx,Righty, Leftx2,Lefty2,Rightx2,Righty2,Type1, Type2, Gender1, Gender2, Diagnosis1, Diagnosis2, WasTalking1, WasTalking2 ");
 
@@ -912,7 +937,26 @@ namespace UL_Processor_V2023
 
 
 
+                        //DEBUG DELETE ELAN INTERACTIONS
+                        if(filters.ContainsKey(pair.szSubjectMapId) &&
+                            t >= filters[pair.szSubjectMapId].Item1 &&
+                            t< filters[pair.szSubjectMapId].Item2)
+                        {
+                            swi.WriteLine(pair.szSubjectMapId + "," +
+                                                                           pair.szPartnerMapId + "," +
+                                                                           t.ToLongTimeString() + "," +
+                                                                           t.Millisecond + "," +
+                                                                           (withinGofR ? "0.1" : "0") + "," +
+                                                                           (orientedCloseness ? "0.1" : "0") + "," +
+                                                                           ubiTenths[t][pair.szSubjectMapId].wasTalking + "," +
+                                                                           ubiTenths[t][pair.szPartnerMapId].wasTalking);
 
+                        }
+
+
+
+
+                        //DEBUG DELETE ELAN INTERACTIONS
                         pair.pairProxDuration += (withinGofR ? .1 : 0);
                         if (withinGofR && orientedCloseness)
                         {
@@ -1182,6 +1226,10 @@ namespace UL_Processor_V2023
                 sw.Close();
             if (doApp)
                 swapp.Close();
+
+            //DEBUG DELETE ELAN INTERACTIONS
+            swi.Close();
+            //DEBUG DELETE ELAN INTERACTIONS
             //Date	Subject	Partner	SubjectShortID	PartnerShortID	SubjectDiagnosis	PartnerDiagnosis	
             //SubjectGender	PartnerGender	SubjectLanguage	PartnerLanguage	Adult	SubjectStatus	PartnerStatus	SubjectType	PartnerType
             return pairs;
@@ -1289,7 +1337,23 @@ namespace UL_Processor_V2023
                 foreach(String key in personDayMappings.Keys)
                 {
                     PersonDayInfo pdi = personDayMappings[key];
-                    if(pdi.present && pdi.status=="PRESENT" &&
+
+                //00:11:CE:00:00:00:D4:C3	00:11:CE:00:00:00:D5:F4
+
+                if (ubiLocation.tag == "00:11:CE:00:00:00:D5:F4")
+                {
+                    bool stop = true;
+                    DateTime d2 = new DateTime(dt.Year, dt.Month, dt.Day, 11, 44, 0);
+                     if (dt>=d2) 
+                    {
+                        stop = true;
+                    }
+                }
+
+                
+
+
+                if (pdi.present && pdi.status=="PRESENT" &&
                         dt>=pdi.startDate && dt<=pdi.endDate)
                     {
                         if (ubiLocation.tag == pdi.leftUbi)
@@ -1345,7 +1409,7 @@ namespace UL_Processor_V2023
 
                             2022 - 01-28 08:58:00.200,1.3800916038677513,4.36540153126917,0.4596901265437715,0.9715147678818095,4.272437575392713,0.544450214826891,2.917870339559073,0.41901948402966077,1.1758031858747804,4.318919553330941,0.5020701706853312,2.917870339559072,1.3800916038677513,4.36540153126917,0.9715147678818095,4.272437575392712,0.41901948402966077,1.1758031858747804,4.318919553330941*/
 
-                while (!sr.EndOfStream)
+            while (!sr.EndOfStream)
                             {
                                 String szLine = sr.ReadLine();
                                 String[] lineCols = szLine.Split(',');
@@ -1477,10 +1541,19 @@ namespace UL_Processor_V2023
                                 {
                                     UbiLocation ubiLoc = new UbiLocation();
                                     ubiLoc.tag = tag;
+
+
+                                    if(tag== "00:11:CE:00:00:00:D4:C3")
+                                    { 
+                                        bool stop = true;
+                                    }
+
                                     findTagPerson(ref ubiLoc, lineTime);
 
-
-
+                                    if(ubiLoc.id== "PRIDE_LEAP_AM_1")
+                                    {
+                                        bool stop = true;
+                                    }
                                     if (ubiLoc.id != "" &&
                                         lineTime>= personDayMappings[ubiLoc.id].startDate &&
                                         lineTime<= personDayMappings[ubiLoc.id].endDate)
