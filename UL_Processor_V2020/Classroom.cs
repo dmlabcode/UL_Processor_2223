@@ -6,16 +6,20 @@ using System.Threading.Tasks;
 using System.IO;
 using static IronPython.Modules._ast;
 using System.Xml;
+using IronPython.Compiler;
 
 namespace UL_Processor_V2023
 {
     class Classroom
     {
+        public Boolean isSewio = false;
+        public Boolean includeLabs = true;
         public Boolean justPLS = false;
         public Boolean ubiCleanup = false;
         public Boolean doRecInfo = true;
         public Boolean processData = true;
         public Boolean reDenoise = false;
+        public Boolean kalman = true;
         public Boolean includeAlice = false;
         public String dir = "";
         public String className = "";
@@ -210,7 +214,7 @@ namespace UL_Processor_V2023
                         {
                             Person person = new Person(commaLine, mapById, dList,lList,columnIndexBase);//longid
                              
-                            if (person.mapId != "" && (!personBaseMappings.ContainsKey(person.mapId)))
+                            if (person.mapId != "" && (!personBaseMappings.ContainsKey(person.mapId)) && (this.includeLabs || person.subjectType!="LAB") )
                             {
                                 personBaseMappings.Add(person.mapId, person);
                             }
@@ -260,12 +264,59 @@ namespace UL_Processor_V2023
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
                 classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
- 
+
+                if (this.isSewio)
+                    handleSewio(ref classRoomDay);
+
                 //CLEAN UBI
                 classRoomDay.createCleanUbiFile(dir, startHour, endHour);
             }
 
        }
+        public void handleSewio(ref ClassroomDay classRoomDay)
+        {
+            //HANDLE SWEIO TO UBI FORMAT
+            String szUbiFolder = dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//Ubisense_Data";
+
+            if (Directory.Exists(szUbiFolder))
+            {
+                Directory.Delete(szUbiFolder, true);
+
+            }
+            Directory.CreateDirectory(szUbiFolder);
+            String sewioFolder = dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//Ubisense_Data";
+            Dictionary<DateTime,List<String>> data = new Dictionary<DateTime, List<String>>();
+            if (Directory.Exists(sewioFolder))
+            {
+                String[] files = Directory.GetFiles(sewioFolder);
+                foreach(String f in files)
+                {
+                    if(f.EndsWith(".csv"))
+                    {
+                        using (StreamReader sr = new StreamReader(f))
+                        {
+                            if (!sr.EndOfStream)
+                            {
+                                sr.ReadLine();
+                            }
+
+                            while (!sr.EndOfStream)
+                            {
+                                String szLine = sr.ReadLine();
+                                String[] lineCols = szLine.Split(',');
+                                //Tag Label	X	Y	Time (UTC)
+                                if (lineCols.Length > 17 && lineCols[17] != "")
+                                {
+
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+
+        }
         public void denoise()
         {
             foreach (DateTime day in classRoomDays)
@@ -283,6 +334,8 @@ namespace UL_Processor_V2023
                     {
                         Directory.Delete(szDenoisedFolder,true);
                     }
+
+
                 }
                 classRoomDay.createDenoisedFile(dir, className);//, startHour, endHour);
             }
@@ -307,12 +360,27 @@ namespace UL_Processor_V2023
 
             try
             {
+                String newDiagnosis = "";
+                int pos = 0;
+                foreach (String d in pi.diagnosisList)
+                {
+                    newDiagnosis +=  (pos>0?","+d: d);
+                    pos++;
+                }
+                String newLanguages = ""; 
+                pos = 0;
+                foreach (String l in pi.languagesList)
+                {
+                    newLanguages += (pos > 0 ? "," + l : l);
+                    pos++;
+                }
+
+
                 String[] files = Directory.GetFiles(dir + "//PLS//", "*.its", SearchOption.AllDirectories);
                 DateTime classDay= Convert.ToDateTime(PLSDay);
 
                 foreach (string itsFile in files)
                 {
-                    double testTc = 0;
                     String szLenaId = Utilities.getLenaIdFromFileName(Path.GetFileName(itsFile));
                     if (szLenaId == PLSLENA)
                     { 
@@ -381,7 +449,7 @@ namespace UL_Processor_V2023
                                                                             "," +
                                                                             String.Format("{0:0.00}", dbAvg) + "," +
                                                                             String.Format("{0:0.00}", dbPeak) + "," +
-                                                                            String.Format("{0:0.00}", tc)+","+ PLStype);
+                                                                            String.Format("{0:0.00}", tc)+","+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob);
                                              
                                         }
 
@@ -424,7 +492,7 @@ namespace UL_Processor_V2023
                                                                             String.Format("{0:0.00}", bd) + "," +
                                                                             "," +
                                                                             String.Format("{0:0.00}", dbAvg) + "," +
-                                                                            String.Format("{0:0.00}", dbPeak) + ",,"+PLStype);
+                                                                            String.Format("{0:0.00}", dbPeak) + ",,"+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob);
 
                                                   
                                                     foreach (XmlAttribute atts in seg.Attributes)
@@ -455,7 +523,7 @@ namespace UL_Processor_V2023
                                                                         String.Format("{0:0.00}", bd) + "," +
                                                                         "," +
                                                                         "," +
-                                                                        "," + ","+PLStype); //String.Format("{0:0.00}", dbPeak) + ",");
+                                                                        "," + ","+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob); //String.Format("{0:0.00}", dbPeak) + ",");
 
                                                                  
                                                         }
@@ -484,7 +552,7 @@ namespace UL_Processor_V2023
                                                                         String.Format("{0:0.00}", bd) + "," +
                                                                         "," +
                                                                         "," +
-                                                                        "," + ","+PLStype);   //String.Format("{0:0.00}", dbPeak) + ",");
+                                                                        "," + ","+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob);   //String.Format("{0:0.00}", dbPeak) + ",");
 
                                                             
                                                         }
@@ -512,7 +580,7 @@ namespace UL_Processor_V2023
                                                                         String.Format("{0:0.00}", bd) + "," +
                                                                         String.Format("{0:0.00}", piac) + "," +
                                                                         String.Format("{0:0.00}", dbAvg) + "," +
-                                                                        String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+                                                                        String.Format("{0:0.00}", dbPeak) + "," + ","+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob);
 
                                                   
 
@@ -537,7 +605,7 @@ namespace UL_Processor_V2023
                                                                          String.Format("{0:0.00}", bd) + "," +
                                                                          "0.00," +
                                                                          String.Format("{0:0.00}", dbAvg) + "," +
-                                                                         String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+                                                                         String.Format("{0:0.00}", dbPeak) + "," + ","+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob);
 
                                                    
                                                     break;
@@ -558,7 +626,7 @@ namespace UL_Processor_V2023
                                                                         String.Format("{0:0.00}", bd) + "," +
                                                                         "0.00," +
                                                                         String.Format("{0:0.00}", dbAvg) + "," +
-                                                                        String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+                                                                        String.Format("{0:0.00}", dbPeak) + "," + ","+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob);
  
 
                                                     break;
@@ -579,7 +647,7 @@ namespace UL_Processor_V2023
                                                                        String.Format("{0:0.00}", bd) + "," +
                                                                        "0.00," +
                                                                        String.Format("{0:0.00}", dbAvg) + "," +
-                                                                       String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+                                                                       String.Format("{0:0.00}", dbPeak) + "," + ","+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob);
 
                                                     
                                                     break;
@@ -601,7 +669,7 @@ namespace UL_Processor_V2023
                                                                        String.Format("{0:0.00}", bd) + "," +
                                                                        String.Format("{0:0.00}", 0) + "," +
                                                                        String.Format("{0:0.00}", dbAvg) + "," +
-                                                                       String.Format("{0:0.00}", dbPeak) + "," + ","+PLStype);
+                                                                       String.Format("{0:0.00}", dbPeak) + "," + ","+ PLStype+","+newDiagnosis+","+newLanguages+","+pi.gender+","+pi.dob);
                                                         break;
 
 
@@ -632,10 +700,26 @@ namespace UL_Processor_V2023
             //ONSETS
             String szOnsetOutputFile = dir + "//PLSONSETS_" + "_" + Utilities.szVersion + ".CSV";
             TextWriter sw= new StreamWriter(szOnsetOutputFile);
+
+            String newDiagnosis = "";
+            foreach (String d in diagnosisList)
+            {
+                newDiagnosis += ( d +  ",");
+            }
+            String newLanguages = "";
+            foreach (String l in languagesList)
+            {
+                newLanguages += ( l +   ",");
+            }
+
+
             sw.WriteLine("File,Date,Subject,LenaID,SubjectType,ConversationId," +
                "voctype,recstart,startsec,endsec,starttime,endtime,duration," +
                "seg_duration,wordcount,avg_db,avg_peak,turn_taking," +
-               "PLS_Type");//,children,teachers");
+               "PLS_Type,"+newDiagnosis+newLanguages+"Sex,DOB");//,children,teachers");//add subj info
+             
+               
+ 
             foreach (Person pi in personBaseMappings.Values)
             {
                 String[] preLENAS = pi.prePLSLENA.Split('|');
@@ -658,6 +742,28 @@ namespace UL_Processor_V2023
             sw.Close();
 
         }
+        public void processUbi(Boolean doTenths)
+        {
+
+            /*4.1 For each Collection Day process daily files*/
+            foreach (DateTime day in classRoomDays)
+            {
+                ClassroomDay classRoomDay = new ClassroomDay(day);
+                classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+
+                //GR
+                String sGrOutputFile = dir + "//SYNC//GR//DAYUBIGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                if(doTenths)
+                {
+                    sGrOutputFile=sGrOutputFile.Replace(".CSV", "10TH.CSV");
+                    classRoomDay.getTenthsFromUbi(dir, sGrOutputFile);
+                }  
+                else
+                classRoomDay.makeGofRFilesAndTimeDictFromUbi(dir, sGrOutputFile);//
+            }
+        }
+
+        
         public void process(Boolean all,Boolean tenSecs)
         {
             makeDayReportLists();
@@ -690,7 +796,7 @@ namespace UL_Processor_V2023
                   //  classRoomDay.setTenthOfSecALICE(dir, className, lenaStartTimes);
 
                     classRoomDay.setTenthOfSecLENA();
-                    szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                    szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_V" + Utilities.szVersion + ".CSV";
                     classRoomDay.writeTenthOfSec(szTenthOutputFile);
 
                      

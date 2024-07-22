@@ -10,7 +10,7 @@ from filterpy.common import Q_discrete_white_noise
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
-
+import time 
 # Define subject types in the classroom
 CHILD_SUBJECT = "Child"
 TEACHER_SUBJECT = "Teacher"
@@ -82,7 +82,6 @@ def load_mapping_file(path: Path, remove_lab: bool = False) -> pd.DataFrame:
             #if row["TYPE"] not in SUBJECT_TYPES:
             #    raise ValueError("Unknown subject type in the mapping file: {}".format(row["TYPE"]))
 
-             
             if row["STATUS"] == "ABSENT" or row["STATUS"] == "NODATA":
                 continue
             
@@ -92,7 +91,7 @@ def load_mapping_file(path: Path, remove_lab: bool = False) -> pd.DataFrame:
                 subjectType=row["TYPE"]
             elif "_T" in subject_id:
                 subjectType="Teacher"
-            elif "_L" in subject_id and "_AM_" not in subject_id  and "_PM_" not in subject_id :
+            elif "_L" in subject_id and "_AM_" not in subject_id  and "_PM_" not in subject_id  and "_TRTL_" not in subject_id :
                 subjectType="Lab"
             logging.warning("subjectType  "+subjectType)
                 
@@ -157,7 +156,8 @@ def load_motion_data_file(path: Path, mapping: pd.DataFrame) -> Dict[str, pd.Dat
     # Generate the mapper from raw tag ID to subject ID and position
     tag_id_mapper = {row["LeftTag"]: "{}L".format(sid) for sid, row in mapping.iterrows()}
     tag_id_mapper.update({row["RightTag"]: "{}R".format(sid) for sid, row in mapping.iterrows()})
-
+    logging.warning("The length of tag_id_mapper is:"+   str(len(tag_id_mapper)))
+    
     # Load motion data file
     data = pd.read_csv(path, names=["TagID", "Time", "X", "Y", "Z"], usecols=[1, 2, 3, 4, 5])
     data = data[data["TagID"].isin(tag_id_mapper)]
@@ -184,8 +184,10 @@ def pair_and_interpolate_motion_data(
     Returns:
         Dict[str, pd.DataFrame]: A Dict mapping subject ID to the corresponding classroom motion data
     """
-
+    logging.warning('pair_and_interpolate_motion_data')
+    logging.warning('data len '+ str(len(data)))
     subject_ids = list(sorted(set(tid[:-1] for tid in data)))
+    logging.warning('subject_ids len '+ str(len(subject_ids)))
     rst = dict()
     for i, sid in enumerate(subject_ids, 1):
         if "{}L".format(sid) not in data or "{}R".format(sid) not in data:
@@ -203,6 +205,8 @@ def pair_and_interpolate_motion_data(
         t_min = max(data_l["Time"].min(), data_r["Time"].min())
         t_max = min(data_l["Time"].max(), data_r["Time"].max())
 
+
+
         # Linear interpolate position at given frequency
         t = t_min + timedelta(microseconds=int(
             np.ceil(float(t_min.microsecond) / t_delta.total_seconds() / 1e6) * t_delta.total_seconds() * 1e6
@@ -211,21 +215,33 @@ def pair_and_interpolate_motion_data(
             desc="Pair and interpolate motion data for {} ({}/{})".format(sid, i, len(subject_ids)),
             total=int((t_max - t) / t_delta + 1)
         )
+             
 
         idx_l = data_l[data_l["Time"] >= t].first_valid_index()
         idx_r = data_r[data_r["Time"] >= t].first_valid_index()
+
+        #logging.warning("the T  {} t_min {}  idx_l {} idx_r {}".format(t,t_min,idx_l,idx_r ))
+        
         if idx_l is None or idx_r is None:
             logging.warning("{} are dropped since data from both tags do not overlap".format(sid))
             continue  # No overlapped data, drop the subject
-
+        
         while t <= t_max:
+            #logging.warning("TTTTTTT {} data_l[Time][idx_l] {} data_r[Time][idx_r] {}   ".format(t,data_l["Time"][idx_l],data_r["Time"][idx_r] ))
+            
             while idx_l<=0 or data_l["Time"][idx_l] < t:
                 idx_l += 1
+                #logging.warning("LT {} data_l[Time][idx_l] {} data_r[Time][idx_r] {}   ".format(t,data_l["Time"][idx_l],data_r["Time"][idx_r] ))
             while idx_r<=0 or data_r["Time"][idx_r] < t:
                 idx_r += 1
-
+            #logging.warning("t {} t_delta {} idx_l {} idx_r {}  ".format(t,t_delta,idx_l,idx_r))
+            
+             
             sdata["Time"].append(t)
-            if abs((data_l["Time"][idx_l] - data_r["Time"][idx_r]).total_seconds()) < GAP_TOLERANCE:
+            #if abs((data_l["Time"][idx_l] - data_r["Time"][idx_r]).total_seconds()) > GAP_TOLERANCE and (abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE):
+                #logging.warning("REAL SECONDS>GAP {} {} {}  ".format(data_l["Time"][idx_l],data_r["Time"][idx_r],(data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()))
+                #time.sleep(20)
+            if abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE:
                 w_l = (data_l["Time"][idx_l] - t) / (data_l["Time"][idx_l] - data_l["Time"][idx_l - 1])
                 w_r = (data_r["Time"][idx_r] - t) / (data_r["Time"][idx_r] - data_r["Time"][idx_r - 1])
                 sdata["lx"].append(data_l["X"][idx_l - 1] * (1 - w_l) + data_l["X"][idx_l] * w_l)
@@ -761,6 +777,7 @@ def prepare_classroom_motion_vocal_dataset(
     mapping_length = mapping.size
     logging.warning("The length of mapping is:"+   str(mapping_length))
     dataset = load_motion_data_file(mdf_path, mapping)
+    logging.warning("The length of dataset is:"+   str(len(str(dataset))))
     dataset = pair_and_interpolate_motion_data(dataset)
     logging.info("Subjects contained in the dataset: [{}]".format(", ".join(dataset)))
 

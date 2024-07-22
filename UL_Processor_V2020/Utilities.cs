@@ -27,6 +27,12 @@ namespace UL_Processor_V2023
                 (d.Day <= 9 ? "0" + d.Day : d.Day.ToString()) + szSep +
                 d.Year.ToString().Substring(y);
         }
+        public static String getDateStrYYMMDD(DateTime d, String szSep, int y)
+        {
+            return d.Year.ToString().Substring(y) + szSep +
+                (d.Month <= 9 ? "0" + d.Month : d.Month.ToString()) + szSep +
+                (d.Day <= 9 ? "0" + d.Day : d.Day.ToString()) ;
+        }
         public static String getDateNoZeroStr(DateTime d, String szSep)
         {
             return d.Month.ToString()  + szSep +

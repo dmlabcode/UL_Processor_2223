@@ -79,7 +79,7 @@ namespace UL_Processor_V2023
             {
                 mapId = id;
                 lenaId = line[columnIndex["LENA"]].Trim();
-                sonyId = line[columnIndex["SONY"]].Trim();
+                sonyId = columnIndex["SONY"]>=0?line[columnIndex["SONY"]].Trim():"";
                 leftUbi = line[columnIndex["LEFT"]].Trim().Length>6?line[columnIndex["LEFT"]].Trim(): "00:11:CE:00:00:00:" + line[columnIndex["LEFT"]].Trim();
                 rightUbi = line[columnIndex["RIGHT"]].Trim().Length > 6 ? line[columnIndex["RIGHT"]].Trim() : "00:11:CE:00:00:00:" + line[columnIndex["RIGHT"]].Trim();
                 present = line[columnIndex["STATUS"]].ToUpper() == "PRESENT";
