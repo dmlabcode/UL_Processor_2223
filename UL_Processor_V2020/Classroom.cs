@@ -7,6 +7,8 @@ using System.IO;
 using static IronPython.Modules._ast;
 using System.Xml;
 using IronPython.Compiler;
+using System.Web.UI.WebControls;
+using System.Security.Policy;
 
 namespace UL_Processor_V2023
 {
@@ -33,14 +35,45 @@ namespace UL_Processor_V2023
         public int endHour = 16;
         public int endMinute = 0;
         public Dictionary<String, List<String>> filesToMerge = new Dictionary<String, List<string>>();
-        
+        public Boolean toFilter = false;
+        public double maxY = 2;
+        public double maxGapSecs = 60;
 
         public List<String> diagnosisList = new List<string>();
         public List<String> languagesList = new List<string>();
         int numCols = 0;
+
         public void getPairActLeadsFromFiles()
         {
-            TextWriter sw = new StreamWriter(dir + "//SYNC//PAIRACTIVITY//PAIRACTIVITY_" + Utilities.szVersion + "ALL.CSV");
+            getPairActLeadsFromFiles("SYNC");
+        }
+        public void getPairActLeadsFromFiles(String syncFolder)
+        {
+            String reportClassYear = className;
+            String classYear = "";
+            try
+            {
+                classYear = string.Join("", reportClassYear.Where(Char.IsDigit));
+
+            }
+            catch (Exception e) 
+            {
+            
+            }
+            if(classYear =="")
+            {
+                if(this.classRoomDays.Count > 0)
+                {
+                    classYear = this.classRoomDays[0].Year.ToString();
+                    if (this.classRoomDays.Count > 1)
+                    {
+                        classYear = classYear+this.classRoomDays[this.classRoomDays.Count-1].Year.ToString();
+                    }
+                }
+                reportClassYear = reportClassYear + classYear;
+            }
+             
+            TextWriter sw = new StreamWriter(dir + "//"+syncFolder+"//PAIRACTIVITY//PAIRACTIVITY_" + reportClassYear+"_"+ Utilities.szVersion + "ALL.CSV");
             int numOfDays = classRoomDays.Count;
             Dictionary<String, String> prevPairLines = new Dictionary<string, string>();
             Dictionary<String, String> pairLines = new Dictionary<string, string>();
@@ -48,7 +81,7 @@ namespace UL_Processor_V2023
             foreach (DateTime dayDate in classRoomDays)
             {
                 pairLines = new Dictionary<string, string>();
-                String[] szFiles = Directory.GetFiles(dir + "//SYNC//PAIRACTIVITY//");
+                String[] szFiles = Directory.GetFiles(dir + "//"+syncFolder+"//PAIRACTIVITY//");
                 String fileDayPart = Utilities.getDateStr(dayDate, "", 2);
                 String headerLine = "";
 
@@ -71,7 +104,7 @@ namespace UL_Processor_V2023
                             {
                                 String[] headerCols = headerLine.Split ( ',');
                                 numCols = headerCols.Length;
-                                sw.WriteLine(headerLine + "," + headerLine.Replace(",", ",Lead_"));
+                                sw.WriteLine(headerLine + ",Lead_" + headerLine.Replace(",", ",Lead_"));
                                 headerLine = "";
                             }
                             while ((!sr.EndOfStream))// && lineCount < 10000)
@@ -145,9 +178,9 @@ namespace UL_Processor_V2023
                         int cp = 0;
                         foreach (String szCol in line)
                         {
-                            if (szCol.ToUpper().Trim().Contains("DIAGNOSIS"))
+                            if (szCol.ToUpper().Trim().Contains("DIAGNOSIS") || szCol.ToUpper().Trim().Contains("DEVICE"))
                             {
-                                diagnosisList.Add(szCol.Trim());
+                                diagnosisList.Add(szCol.Trim().Replace("Subject_", "").Replace("Subject", ""));
                                 dList.Add(cp);
                             }
                             else if (szCol.ToUpper().Trim().Contains("LANGUAGE"))
@@ -263,7 +296,8 @@ namespace UL_Processor_V2023
             foreach (DateTime day in classRoomDays)
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
-                classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir ,className, personBaseMappings, mapById, startHour, endHour, endMinute);
 
                 if (this.isSewio)
                     handleSewio(ref classRoomDay);
@@ -322,7 +356,8 @@ namespace UL_Processor_V2023
             foreach (DateTime day in classRoomDays)
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
-                classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
+                //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
 
                 //CLEAN, DENOISE
                 if (this.reDenoise)
@@ -347,7 +382,8 @@ namespace UL_Processor_V2023
             foreach (DateTime day in classRoomDays)
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
-                classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
 
                 //CLEAN UBI
                 classRoomDay.mergeAndCleanExistingDenoised(dir, startHour, endHour);
@@ -694,6 +730,285 @@ namespace UL_Processor_V2023
             }
              
         }
+        public void processOutsideLenas()
+        {
+            String szInputFile = dir + "//PLAYGROUNDTIMES.csv";
+            String szOnsetOutputFile = dir + "//PLAYGROUNDLENASUM_" + Utilities.szVersion + ".CSV";
+            TextWriter sw = new StreamWriter(szOnsetOutputFile);
+            
+            sw.WriteLine("ChildKey,ID,RecordingDate,VestOn,Playground Start Time,Playground End Time,Vest Off/Ubi End,context,AWC_AM,AWC_PG,AWC_NOON,CT_AM,CT_PG,CT_NOON,CV_AM,CV_PG,CV_NOON,AWC,CT,CV");
+
+
+
+            Dictionary<String, Dictionary<String, List<String[]>>> dayLines = new Dictionary<string, Dictionary<string, List<string[]>>>();
+            if (File.Exists(szInputFile))
+                using (StreamReader sr = new StreamReader(szInputFile))
+                {
+                    if (!sr.EndOfStream)
+                    {
+                        String commaLine = sr.ReadLine();
+                        String[] line = commaLine.Split(',');
+                        while ((!sr.EndOfStream)) 
+                        {
+                            commaLine = sr.ReadLine();
+                            line = commaLine.Split(',');
+                            if (line.Length > 5 && line[1] != "")
+                            {
+                                String szd = Utilities.getDateDashStr(Convert.ToDateTime( line[2].Trim()));
+                                String sid = line[1].Trim().ToUpper();
+                                if (!dayLines.ContainsKey(szd))
+                                {
+                                    dayLines.Add(szd, new Dictionary<string, List<string[]>>());
+                                }
+                                if (!dayLines[szd].ContainsKey(sid))
+                                {
+                                    dayLines[szd].Add(sid, new List<string[]>());
+                                }
+                                dayLines[szd][sid].Add(line);
+                            }
+                        }
+                    }
+                }
+            foreach (DateTime day in classRoomDays)
+            {
+                ClassroomDay classRoomDay = new ClassroomDay(day);
+                //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
+
+
+                String szDayFolder = Utilities.getDateDashStr(day);
+
+                if (dayLines.ContainsKey(szDayFolder))
+                {
+
+                    foreach (String sid in dayLines[szDayFolder].Keys)
+                    {
+                        string[] szDayLenaItsFiles = Directory.GetFiles(dir + "//" + szDayFolder + "//LENA_Data//ITS//", "*.its");
+
+
+
+                        foreach (string itsFile in szDayLenaItsFiles)
+                        {
+                            String szLenaId = Utilities.getLenaIdFromFileName(Path.GetFileName(itsFile));
+
+                            PersonDayInfo pdi = new PersonDayInfo();
+
+                            foreach (PersonDayInfo pd in classRoomDay.personDayMappings.Values)
+                            {
+                                if (pd.lenaId == szLenaId && pd.present && pd.status == "PRESENT")
+                                {
+                                    pdi = pd;
+                                    break;
+                                }
+                            }
+
+                            if (pdi.mapId != "")
+                            {
+                                Person pi = personBaseMappings[pdi.mapId];
+
+                                foreach (String[] line in dayLines[szDayFolder][sid])
+                                {
+                                    String context = line[7].Trim().ToUpper();
+                                    DateTime vestOn = Convert.ToDateTime(line[3]);
+                                    DateTime vestOff = Convert.ToDateTime(line[6]);
+                                    DateTime pgOn = context == "FULL_PRESCHOOL_DAY" || (day.Month == 11 && day.Day == 29) || (day.Month == 1 && day.Day == 30) ? Convert.ToDateTime(line[4]) : vestOn;
+                                    DateTime pgOff = context == "FULL_PRESCHOOL_DAY" ? Convert.ToDateTime(line[5]) : vestOff;
+                                    vestOn = new DateTime(day.Year, day.Month, day.Day, vestOn.Hour, vestOn.Minute, vestOn.Second);
+                                    vestOff = new DateTime(day.Year, day.Month, day.Day, vestOff.Hour, vestOff.Minute, vestOff.Second);
+
+                                    pgOn = new DateTime(day.Year, day.Month, day.Day, pgOn.Hour, pgOn.Minute, pgOn.Second);
+                                    pgOff = new DateTime(day.Year, day.Month, day.Day, pgOff.Hour, pgOff.Minute, pgOff.Second);
+
+                                    double awc = 0;
+                                    double awcAm = 0;
+                                    double awcPg = 0;
+                                    double awcNoon = 0;
+
+                                    double ct = 0; 
+                                    double ctAm = 0; ;
+                                    double ctPg = 0;
+                                    double ctNoon = 0;
+
+                                    double cv = 0; 
+                                    double cvAm = 0;
+                                    double cvPg = 0;
+                                    double cvNoon = 0;
+
+
+                                    XmlDocument doc = new XmlDocument();
+                                    doc.Load(itsFile);
+                                    XmlNodeList rec = doc.ChildNodes[0].SelectNodes("ProcessingUnit/Recording");
+                                    foreach (XmlNode recording in rec)
+                                    {
+
+                                        double recStartSecs = Convert.ToDouble(recording.Attributes["startTime"].Value.Substring(2, recording.Attributes["startTime"].Value.Length - 3));
+                                        DateTime recStartTime = DateTime.Parse(recording.Attributes["startClockTime"].Value);
+                                        var est = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+                                        recStartTime = TimeZoneInfo.ConvertTime(recStartTime, est);
+
+
+
+
+                                        XmlNodeList nodes = recording.SelectNodes("Conversation|Pause");
+
+
+                                        if (Utilities.isSameDay(recStartTime, day) &&
+                                        vestOn.Hour >= startHour &&
+                                        (vestOn.Hour < endHour ||
+                                        (vestOn.Hour == endHour &&
+                                        vestOn.Minute <= endMinute)))
+                                        {
+
+
+                                            foreach (XmlNode conv in nodes)
+                                            {
+                                                XmlNodeList segments = conv.SelectNodes("Segment");
+                                                double startSecs = Convert.ToDouble(conv.Attributes["startTime"].Value.Substring(2, conv.Attributes["startTime"].Value.Length - 3)) - recStartSecs;
+                                                double endSecs = Convert.ToDouble(conv.Attributes["endTime"].Value.Substring(2, conv.Attributes["endTime"].Value.Length - 3)) - recStartSecs;
+                                                DateTime start = Utilities.geFullTime(recStartTime.AddSeconds(startSecs));
+                                                DateTime end = Utilities.geFullTime(recStartTime.AddSeconds(endSecs));
+                                                //double bdSecs = (end - start).Seconds;
+                                                //double bdMilliseconds = (end - start).Milliseconds > 0 ? ((end - start).Milliseconds / 1000.00) : 0.00;
+                                                //double bd = bdSecs + bdMilliseconds;
+
+                                                if (Utilities.isSameDay(start, day) &&
+                                                start.Hour >= startHour &&
+                                                (start.Hour < endHour || (start.Hour == endHour && start.Minute <= endMinute)) &&
+                                                start >= vestOn &&
+                                                start <= vestOff)
+                                                {
+                                                    if (conv.Name == "Conversation")
+                                                    {
+                                                        double tc = Convert.ToDouble(conv.Attributes["turnTaking"].Value); ;
+
+                                                        if (tc > 0)
+                                                        {
+                                                            if (context == "FULL_PRESCHOOL_DAY")
+                                                            {
+                                                                if (start < pgOn)
+                                                                {
+                                                                    ctAm += tc;
+
+                                                                }
+                                                                if (start >= pgOff)
+                                                                {
+                                                                    ctNoon += tc;
+                                                                }
+                                                            }
+                                                            if (start >= pgOn && start < pgOff)
+                                                            {
+                                                                ctPg += tc;
+                                                            }
+                                                            ct += tc;
+                                                        }
+                                                    }
+                                                }
+                                                foreach (XmlNode seg in segments)
+                                                {
+
+                                                    startSecs = Convert.ToDouble(seg.Attributes["startTime"].Value.Substring(2, seg.Attributes["startTime"].Value.Length - 3)) - recStartSecs;
+                                                    endSecs = Convert.ToDouble(seg.Attributes["endTime"].Value.Substring(2, seg.Attributes["endTime"].Value.Length - 3)) - recStartSecs;
+                                                    start = Utilities.geFullTime(recStartTime.AddMilliseconds(startSecs * 1000));
+                                                    end = Utilities.geFullTime(recStartTime.AddMilliseconds(endSecs * 1000));
+
+
+                                                    //bd = (end - start).Seconds + ((end - start).Milliseconds > 0 ? ((end - start).Milliseconds / 1000.00) : 0); //endSecs - startSecs;
+                                                    //dbAvg = Convert.ToDouble(seg.Attributes["average_dB"].Value);
+                                                    //dbPeak = Convert.ToDouble(seg.Attributes["peak_dB"].Value);
+                                                    String speaker = seg.Attributes["spkr"].Value;
+                                                    switch (speaker)
+                                                    {
+                                                        case "CHN":
+                                                        case "CHF":
+                                                            double pivd = Convert.ToDouble(seg.Attributes["childUttLen"].Value.Substring(1, seg.Attributes["childUttLen"].Value.Length - 2));
+                                                            double pivc = Convert.ToDouble(seg.Attributes["childUttCnt"].Value);
+                                                            if (context == "FULL_PRESCHOOL_DAY")
+                                                            {
+                                                                if (start < pgOn)
+                                                                {
+                                                                    cvAm += pivc;
+
+                                                                }
+                                                                if (start >= pgOff)
+                                                                {
+                                                                    cvNoon += pivc;
+                                                                }
+                                                            }
+                                                            if (start >= pgOn && start < pgOff)
+                                                            {
+                                                                cvPg += pivc;
+                                                            }
+                                                            cv += pivc;
+                                                            break;
+                                                        case "FAN":
+                                                        case "MAN":
+                                                            Boolean isFemale = speaker == "FAN";
+                                                            double piac = isFemale ? Convert.ToDouble(seg.Attributes["femaleAdultWordCnt"].Value) : Convert.ToDouble(seg.Attributes["maleAdultWordCnt"].Value);
+                                                            double piad = isFemale ? Convert.ToDouble(seg.Attributes["femaleAdultUttLen"].Value.Substring(1, seg.Attributes["femaleAdultUttLen"].Value.Length - 2)) : Convert.ToDouble(seg.Attributes["maleAdultUttLen"].Value.Substring(1, seg.Attributes["maleAdultUttLen"].Value.Length - 2));
+                                                            if (context == "FULL_PRESCHOOL_DAY")
+                                                            {
+                                                                if (start < pgOn)
+                                                                {
+                                                                    awcAm += piac;
+
+                                                                }
+                                                                if (start >= pgOff)
+                                                                {
+                                                                    awcNoon += piac;
+                                                                }
+                                                            }
+                                                            if (start >= pgOn && start < pgOff)
+                                                            {
+                                                                awcPg += piac;
+                                                            }
+                                                            awc += piac;
+
+                                                            //piad = bd;
+                                                            break;
+                                                    }
+
+                                                }
+
+
+                                            }
+
+
+                                        }
+                                    }
+
+                                    //WRITE SUM
+                                    sw.WriteLine( String.Join(",", line) + "," +
+                                        (context == "FULL_PRESCHOOL_DAY" ? awcAm.ToString() : "NA") + "," +
+                                        awcPg.ToString() + "," +
+                                        (context == "FULL_PRESCHOOL_DAY" ? awcNoon.ToString() : "NA") + "," +
+                                        (context == "FULL_PRESCHOOL_DAY" ? ctAm.ToString() : "NA") + "," +
+                                        ctPg.ToString() + "," +
+                                        (context == "FULL_PRESCHOOL_DAY" ? ctNoon.ToString() : "NA") + "," +
+                                        (context == "FULL_PRESCHOOL_DAY" ? cvAm.ToString() : "NA") + "," +
+                                        cvPg.ToString() + "," +
+                                        (context == "FULL_PRESCHOOL_DAY" ? cvNoon.ToString() : "NA") + ","+
+                                        awc.ToString()+","+ct.ToString()+","+cv.ToString());
+                                    //"ChildKey,ID,RecordingDate,VestOn,Playground Start Time,Playground End Time,Vest Off/Ubi End,context,AWC_AM,AWC,PG,AWC_NOON,CT_AM,CT_PG,CT_NOON,CV_AM,CV_PG,CV_NOON");
+
+
+
+
+                                }
+                            }
+
+
+                        }
+
+                    }
+
+
+
+
+
+                }
+            }
+            sw.Close();
+        }
         public void processPLSs()
         {
 
@@ -749,7 +1064,8 @@ namespace UL_Processor_V2023
             foreach (DateTime day in classRoomDays)
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
-                classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
 
                 //GR
                 String sGrOutputFile = dir + "//SYNC//GR//DAYUBIGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
@@ -776,8 +1092,10 @@ namespace UL_Processor_V2023
             foreach (DateTime day in classRoomDays)
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
-                classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
-                 
+                //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
+                //if (className == "StarFish_2223")
+                //    classRoomDay.toFilter = true;
                 //ONSETS
                 String szOnsetOutputFile = dir + "//SYNC//ONSETS//DAYONSETS_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                 Dictionary<String, Tuple<String, DateTime>> lenaStartTimes = classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile, startHour, endHour, endMinute);//takes only mapping start-end

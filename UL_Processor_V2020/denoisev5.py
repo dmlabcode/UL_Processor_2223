@@ -47,6 +47,10 @@ def load_mapping_file(path: Path, remove_lab: bool = False) -> pd.DataFrame:
         lenaId=""
         if 'LENA' in df.columns:
             lenaId=row["LENA"]
+        elif 'DLP' in df.columns:
+            lenaId=row["DLP"]
+        elif 'LENA DLP ID' in df.columns:
+            lenaId=row["LENA DLP ID"]
         else:
             lenaId=row[8]
          
@@ -241,6 +245,8 @@ def pair_and_interpolate_motion_data(
             #if abs((data_l["Time"][idx_l] - data_r["Time"][idx_r]).total_seconds()) > GAP_TOLERANCE and (abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE):
                 #logging.warning("REAL SECONDS>GAP {} {} {}  ".format(data_l["Time"][idx_l],data_r["Time"][idx_r],(data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()))
                 #time.sleep(20)
+            #corrected if abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE:
+            #original wrong if abs((data_l["Time"][idx_l] - data_r["Time"][idx_r]).total_seconds()) < GAP_TOLERANCE:
             if abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE:
                 w_l = (data_l["Time"][idx_l] - t) / (data_l["Time"][idx_l] - data_l["Time"][idx_l - 1])
                 w_r = (data_r["Time"][idx_r] - t) / (data_r["Time"][idx_r] - data_r["Time"][idx_r - 1])

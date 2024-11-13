@@ -5,14 +5,96 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.IO;
+using static IronPython.Modules._ast;
+
 namespace UL_Processor_V2023
 {
     class Utilities
     {
         public static String szVersion = "";
-        
-        /********************/////////////// DATE STUFF ////////////////********************
 
+        public static Boolean specialFilterOut(String szDate)
+        {
+            return specialFilterOut(Convert.ToDateTime(szDate));
+        }
+        public static Boolean specialFilterOut(DateTime d)
+        {
+
+            Boolean filterOut = false;
+            try
+            {
+                //if (szDate.Trim() != "")
+                {
+                    //DateTime d = Convert.ToDateTime(szDate);
+                    if ((d.Year == 2022 && d.Month == 12 && d.Day == 7 && ((d.Hour == 10 && d.Minute >= 50) || ((d.Hour == 11 && d.Minute <= 25)))) ||
+                        (d.Year == 2022 && d.Month == 12 && d.Day == 5 && (d.Hour == 11 && d.Minute >= 13 && d.Minute <= 40)) ||
+                        (d.Year == 2022 && d.Month == 11 && d.Day == 16 && (d.Hour == 11 && d.Minute >= 11 && d.Minute <= 28)) ||
+                        (d.Year == 2022 && d.Month == 11 && d.Day == 14 && (d.Hour == 12 && d.Minute >= 22 && d.Minute <= 48)) ||
+                        (d.Year == 2022 && d.Month == 10 && d.Day == 21 && (d.Hour == 11 && d.Minute >= 0 && d.Minute <= 24)) ||
+
+                        (d.Year == 2022 && d.Month == 10 && d.Day == 19 && ((d.Hour == 10 && d.Minute >= 58) || ((d.Hour == 11 && d.Minute <= 43)))) ||
+                        (d.Year == 2023 && d.Month == 6 && d.Day == 15 && ((d.Hour == 10 && d.Minute >= 50) || ((d.Hour == 11 && d.Minute <= 22)))) ||
+                        (d.Year == 2023 && d.Month == 4 && d.Day == 19 && (d.Hour == 11 && d.Minute >= 8 && d.Minute <= 28)) ||
+                        (d.Year == 2023 && d.Month == 4 && d.Day == 17 && (d.Hour == 12 && d.Minute >= 37 && d.Minute <= 45)) ||
+
+                        (d.Year == 2023 && d.Month == 3 && d.Day == 15 && ((d.Hour == 10 && d.Minute >= 49) || ((d.Hour == 11 && d.Minute <= 16)))) ||
+                        (d.Year == 2023 && d.Month == 3 && d.Day == 13 && (d.Hour == 12 && d.Minute >= 38 && d.Minute <= 50)) ||
+                        (d.Year == 2023 && d.Month == 2 && d.Day == 1 && ((d.Hour == 10 && d.Minute >= 38) || ((d.Hour == 11 && d.Minute <= 19)))) ||
+                        (d.Year == 2023 && d.Month == 1 && d.Day == 30 && ((d.Hour == 8 && d.Minute >= 59) || ((d.Hour == 9 && d.Minute <= 26))))
+
+
+                        )
+                    {
+                        filterOut = true;
+                    }
+                    else
+                    {
+                        filterOut = false;
+                    }
+                }
+            }
+            catch { }
+            return filterOut;
+        }
+        public static String getDayMappingFileName(String dir, DateTime day, String className)
+        {
+            String mappingDayFileName = dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV";
+            if (!File.Exists(mappingDayFileName))
+            {
+                mappingDayFileName = mappingDayFileName.Substring(mappingDayFileName.LastIndexOf("//") + 2);
+                mappingDayFileName = mappingDayFileName.Replace("OUTSIDE", "").Replace("BASE", "");
+                mappingDayFileName = mappingDayFileName.Substring(0, mappingDayFileName.IndexOf(".")) + "_"+ Utilities.getDateStr(day, "", 0) + ".csv";
+                
+                
+                if (!File.Exists(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//" + mappingDayFileName))
+                {
+                    mappingDayFileName = (mappingDayFileName.IndexOf("_2") > 0 ? mappingDayFileName.Substring(0, mappingDayFileName.IndexOf("_2") + 1) : mappingDayFileName.Substring(0, mappingDayFileName.IndexOf(".")) + "_") + Utilities.getDateStr(day, "", 0) + ".csv";
+                    if (!File.Exists(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//" + mappingDayFileName))
+                    {
+                        String mapDate = mappingDayFileName.Substring(mappingDayFileName.LastIndexOf("_") + 1).Replace(".csv", "").Replace(".CSV", "");
+                        if (mapDate.Length == 8)
+                        {
+                            mappingDayFileName = mappingDayFileName.Replace(mapDate, mapDate.Substring(0, 4) + mapDate.Substring(6, 2));
+                        }
+
+
+                    }
+                }
+
+                mappingDayFileName = dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//"+ mappingDayFileName;
+
+
+
+
+            }
+
+
+           return mappingDayFileName;
+        }
+
+        /********************/////////////// DATE STUFF ////////////////********************
+         
+         
         public static DateTime getDate(String szDate)
         {
             return Convert.ToDateTime(szDate);
