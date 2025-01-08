@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.IO;
 using static IronPython.Modules._ast;
+using System.Runtime.Remoting.Messaging;
+using IronPython.Compiler;
+using IronPython.Runtime;
 
 namespace UL_Processor_V2023
 {
@@ -16,6 +19,190 @@ namespace UL_Processor_V2023
         public static Boolean specialFilterOut(String szDate)
         {
             return specialFilterOut(Convert.ToDateTime(szDate));
+        }
+        public static void resetDiagnosisAndLanguages(Classroom cr)
+        {
+            resetDiagnosisAndLanguages( cr,  "SYNC");
+        }
+        public static void resetDiagnosisAndLanguages(Classroom cr, String syncDir)
+        {
+            resetDiagnosisAndLanguages(cr, syncDir, "GR");
+            resetDiagnosisAndLanguages(cr, syncDir, "PAIRACTIVITY");
+             
+        }
+
+
+        public static void resetDiagnosisAndLanguages(Classroom cr,String syncDir, String reportFolder)
+        {
+
+
+            if ( Directory.Exists(cr.dir + "//"+ syncDir))
+            {
+                String szDir = cr.dir + "//" + syncDir + "//" + reportFolder;
+                if (Directory.Exists(szDir))
+                {
+                    //Date	Subject	Partner	SubjectShortID	PartnerShortID	SubjectDiagnosis Base_School	PartnerDiagnosis Base_School	SubjectSecondaryDiagnosis_Base_School	PartnerSecondaryDiagnosis_Base_School	SubjectDiagnosis_Parent	PartnerDiagnosis_Parent	SubjectSecondaryDiagnosis_Parent	PartnerSecondaryDiagnosis_Parent	SubjectUpdated Diagnosis after SFARI ADOS	PartnerUpdated Diagnosis after SFARI ADOS	SubjectHome Language_School	PartnerHome Language_School	SubjectHolistic Language_School	PartnerHolistic Language_School	SubjectHome Language_Parent	PartnerHome Language_Parent	SubjectHolistic Language_Parent	PartnerHolistic Language_Parent	SubjectPLS Testing Language	PartnerPLS Testing Language	SubjectGender	PartnerGender	Adult	SubjectStatus	PartnerStatus	SubjectType	PartnerType	Input1_pvc_or_sac	Input2_pvc_or_stc	Input3_dur_pvd_or_uttl	PairBlockTalking	PairTalkingDuration	Subject-Talking-Duration-Evenly-Spread	Partner-Talking-Duration-Evenly-Spread	SubjectTurnCount	PartnerTurnCount	SubjectVocCount	PartnerVocCount	SubjectAdultCount	PartnerAdultCount	SubjectNoise	PartnerNoise	SubjectOLN	PartnerOLN	SubjectCry	PartnerCry	SubjectJoinedCry	PartnerJoinedCry	JoinedCry	PairProximityDuration	PairOrientation-ProximityDuration	SharedTimeinClassroom	SubjectTime	PartnerTime	TotalRecordingTime	WUBITotalVD	TotalVD	PartnerWUBITotalVD	PartnerTotalVD	WUBITotalVC	TotalVC	PartnerWUBITotalVC	PartnerTotalVC	WUBITotalTC	TotalTC	PartnerWUBITotalTC	PartnerTotalTC	WUBITotalAC	TotalAC	PartnerWUBITotalAC	PartnerTotalAC	WUBITotalNO	TotalNO	PartnerWUBITotalNO	PartnerTotalNO	WUBITotalOLN	TotalOLN	PartnerWUBITotalOLN	PartnerTotalOLN	WUBITotalCRY	TotalCRY	PartnerWUBITotalCRY	PartnerTotalCRY	WUBITotalAV_DB	TotalAV_DB	PartnerWUBITotalAV_DB	PartnerTotalAV_DB	WUBITotalAV_PEAK_DB	TotalAV_PEAK_DB	PartnerWUBITotalAV_PEAK_DB	PartnerTotalAV_PEAK_DB	CLASSROOM
+
+                    if (Directory.Exists(szDir + "_V2"))
+                    {
+                        Directory.Delete(szDir + "_V2",true);
+                    }
+                        Directory.CreateDirectory(szDir + "_V2"); 
+                    
+                    //foreach (String szReport in Directory.GetFiles(szDir))
+                    {
+                        //File.Move(szReport, szDir + "_OLD//"+Path.GetFileName(szReport));
+                    }
+
+                    foreach ( String szReport in Directory.GetFiles(szDir))//))
+                    {
+                        //String newReport = szReport.Replace(".", "_OLD.");
+                        //File.Move(szReport, newReport);
+                        if (szReport.ToUpper().EndsWith(".CSV"))
+                        using (StreamReader sr = new StreamReader(szReport))
+                        {
+                            TextWriter sw = new StreamWriter(szDir + "_V2" + "//"+ Path.GetFileName(szReport));
+                            String goodLine = "";
+                            String newDiagnosis = "";
+                            foreach (String d in cr.diagnosisList)
+                            {
+                                newDiagnosis += reportFolder != "GR" ? ("Subject" + d + ",Partner" + d + ","):(d+",");
+                            }
+                            String newLanguages = "";
+                            foreach (String l in cr.languagesList)
+                            {
+                                newLanguages += reportFolder != "GR" ? ("Subject" + l + ",Partner" + l + ",") : (l + ",");
+                            }
+
+                            newDiagnosis = newDiagnosis == "SubjectDiagnosis,PartnerDiagnosis,SubjectLanguage,PartnerLanguage," ? "SubjectDiagnosis,PartnerDiagnosis," : newDiagnosis;
+                            newLanguages = newLanguages == "" ? "SubjectLanguage,PartnerLanguage," : newLanguages;
+
+                            List<int> badCols = new List<int>();
+                            if (!sr.EndOfStream)
+                            {
+                                String szLine = sr.ReadLine();
+                                String[] lineCols = szLine.Split(',');
+                                int col = 0;
+                                 
+                                foreach(String title in lineCols)
+                                {
+                                    if(title.ToUpper().Contains("DIAGNOSIS") ||
+                                        title.ToUpper().Contains("LANGUAGE"))
+                                    {
+                                        
+                                        if(badCols.Count==0)
+                                        {
+                                            goodLine += (newDiagnosis + newLanguages);
+                                        }
+                                        
+                                        
+                                        badCols.Add(col);
+
+                                    }
+                                    else
+                                    {
+                                        goodLine += (title+",");
+
+                                    }
+                                    col++;
+                                }
+
+                                //Location	LRIC_BUBBLES_2324_1L	03:00.2	1.038706917	4.839401017	0.25
+                                if (badCols.Count == 0 && reportFolder == "GR")
+                                {
+                                    goodLine="LOCATION,SUBJECTID,TIME,X,Y,Z,"+ (newDiagnosis + newLanguages);
+                                    sw.WriteLine(goodLine);
+                                    readAndWriteNewLine(szLine, ref sw, badCols, cr, reportFolder);
+                                }
+                                else
+                                    sw.WriteLine(goodLine);
+                            }
+
+                             
+                            /*Time,lx,ly,lz,rx,ry,rz,o,dis2d,cx,cy,cz,o_kf,lx_kf,ly_kf,rx_kf,ry_kf,dis2d_kf,cx_kf,cy_kf
+                             chn_vocal   chf_vocal adult_vocal chn_vocal_average_dB chf_vocal_average_dB    adult_vocal_average_dB chn_vocal_peak_dB   chf_vocal_peak_dB adult_vocal_peak_dB
+
+                            2022 - 01-28 08:58:00.200,1.3800916038677513,4.36540153126917,0.4596901265437715,0.9715147678818095,4.272437575392713,0.544450214826891,2.917870339559073,0.41901948402966077,1.1758031858747804,4.318919553330941,0.5020701706853312,2.917870339559072,1.3800916038677513,4.36540153126917,0.9715147678818095,4.272437575392712,0.41901948402966077,1.1758031858747804,4.318919553330941*/
+                            //Location	LRIC_BUBBLES_2324_1L	03:00.2	1.038706917	4.839401017	0.25
+
+                            while (!sr.EndOfStream)
+                            {
+                                String szLine = sr.ReadLine();
+                                readAndWriteNewLine(szLine, ref sw, badCols, cr, reportFolder);
+                            }
+
+                            sw.Close();
+                        }
+
+
+                 }
+
+
+                }
+                 
+
+            }
+         /*       Directory.CreateDirectory(cr.dir + "//SYNC");
+            if (!Directory.Exists(cr.dir + "//SYNC//ONSETS"))
+                Directory.CreateDirectory(cr.dir + "//SYNC//ONSETS");
+            if (!Directory.Exists(cr.dir + "//SYNC//SOCIALONSETS"))
+                Directory.CreateDirectory(cr.dir + "//SYNC//SOCIALONSETS");
+            if (!Directory.Exists(cr.dir + "//SYNC//GR"))
+                Directory.CreateDirectory(cr.dir + "//SYNC//GR");
+            if (!Directory.Exists(cr.dir + "//SYNC//COTALK"))
+                Directory.CreateDirectory(cr.dir + "//SYNC//COTALK");
+            if (!Directory.Exists(cr.dir + "//SYNC//PAIRACTIVITY"))
+                Directory.CreateDirectory(cr.dir + "//SYNC//PAIRACTIVITY");
+
+            if (!Directory.Exists(cr.dir + "//SYNC//PAIRANGLES"))
+                Directory.CreateDirectory(cr.dir + "//SYNC//PAIRANGLES");
+
+            if (!Directory.Exists(cr.dir + "//SYNC//APPROACH"))
+                Directory.CreateDirectory(cr.dir + "//SYNC//APPROACH");
+
+            */
+
+        }
+        public static void readAndWriteNewLine(String szLine,ref TextWriter sw, List<int> badCols, Classroom cr, String reportFolder)
+        {
+             
+            String[] lineCols = szLine.Split(',');
+            String goodLine = String.Join(",", lineCols, 0, badCols.Count>0?badCols[0]:lineCols.Length);
+            String newPairDiagnosis = "";
+            String newSubjectDiagnosis = "";
+            int pos = 0;
+            String szSubject = reportFolder!="GR"?lineCols[1]: lineCols[1].Substring(0, lineCols[1].Length-1);
+            String szPartner = reportFolder != "GR" ? lineCols[2] : lineCols[1].Substring(0, lineCols[1].Length - 1);  
+            Person subject = cr.personBaseMappings[szSubject];
+            Person partner = cr.personBaseMappings[szSubject];
+
+            foreach (String d in subject.diagnosisList)
+            {
+                newPairDiagnosis += (d + "," + (partner.diagnosisList.Count > pos ? partner.diagnosisList[pos] : "") + ",");
+                newSubjectDiagnosis += (d + "," );
+                pos++;
+            }
+            String newPairLanguages = "";
+            String newSubjectLanguages = "";
+            pos = 0;
+            foreach (String l in subject.languagesList)
+            {
+                newPairLanguages += (l + "," + (partner.languagesList.Count > pos ? partner.languagesList[pos] : "") + ",");
+                newSubjectLanguages += (l + "," );
+                pos++;
+            }
+            goodLine += ("," + (reportFolder != "GR"? newPairDiagnosis + newPairLanguages: newSubjectDiagnosis + newSubjectLanguages));
+            
+            if(badCols.Count>0)
+            for (int i = badCols[0] + 1; i < lineCols.Length; i++)
+            {
+                if (!badCols.Contains(i))
+                {
+                    goodLine += (lineCols[i] + ",");
+                }
+
+            }
+            sw.WriteLine(goodLine);
         }
         public static Boolean specialFilterOut(DateTime d)
         {

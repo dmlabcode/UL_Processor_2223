@@ -18,6 +18,7 @@ using UL_Processor_V2020;
 using static IronPython.Runtime.Profiler;
 using static IronPython.SQLite.PythonSQLite;
 using IronPython.Runtime.Operations;
+using IronPython.Compiler;
 
 namespace UL_Processor_V2023
 {
@@ -54,7 +55,7 @@ namespace UL_Processor_V2023
 
 
 
-            sw.WriteLine("File,Date,Subject,LenaID,SubjectType,Conversation_Id,voctype,recstart,startsec,endsec,starttime,endtime,duration,seg_duration,wordcount,avg_db,avg_peak,turn_taking,in_social_contact_talk ");
+            sw.WriteLine("File,Date,Subject,LenaID,SubjectType,Conversation_Id,voctype,recstart,startsec,endsec,starttime,endtime,duration,seg_duration,wordcount,avg_db,avg_peak,turn_taking,in_social_contact_talk, outside_kid_social_contact_and_subject_talking, in_social_contact_and_subject_talking ");
 
             
 
@@ -81,7 +82,9 @@ namespace UL_Processor_V2023
                                                                                             String.Format("{0:0.00}", lo.avgDb) + "," +
                                                                                             String.Format("{0:0.00}", lo.peakDb) + "," +
                                                                                             String.Format("{0:0.00}", lo.tc)+","+
-                                                                                            (lo.inSocialContact?"YES":"NO"));
+                                                                                            (lo.inSocialContactAnyTalking?"YES":"NO")+","+
+                                                                                            (lo.outsideKidsSocialContactSubjectTalking ? "YES" : "NO") + "," +
+                                                                                            (lo.inSocialContactSubjectTalking ? "YES" : "NO"));
 
 
                 }
@@ -114,7 +117,7 @@ namespace UL_Processor_V2023
 "PartnerTotalTC,WUBITotalAC,TotalAC,PartnerWUBITotalAC,PartnerTotalAC,WUBITotalNO,TotalNO,PartnerWUBITotalNO,PartnerTotalNO,"+
 "WUBITotalOLN,TotalOLN,PartnerWUBITotalOLN,PartnerTotalOLN,WUBITotalCRY,TotalCRY,PartnerWUBITotalCRY,PartnerTotalCRY,"+
 "WUBITotalAV_DB,TotalAV_DB,PartnerWUBITotalAV_DB,PartnerTotalAV_DB,WUBITotalAV_PEAK_DB,TotalAV_PEAK_DB,PartnerWUBITotalAV_PEAK_DB,PartnerTotalAV_PEAK_DB,CLASSROOM";
-            //82
+            //82//
 
             String newDiagnosis = "";
             foreach(String d in diagnosisList)
@@ -156,6 +159,8 @@ namespace UL_Processor_V2023
                 String newPairDiagnosis = "";
                 String newPairDiagnosisP = "";
                 int pos = 0;
+
+
                 foreach (String d in subject.diagnosisList)
                 {
                     newPairDiagnosis += (d + "," + (partner.diagnosisList.Count>pos? partner.diagnosisList[pos]:"") + ",");
@@ -859,8 +864,8 @@ namespace UL_Processor_V2023
             Subject 5 (10:18:46-10:24:42)
             Subject 1 (10:24:42-10:29:53)*/
 
-            TextWriter swi = new StreamWriter(szAngleOutputFile.Replace(".CSV","INTERACTIONS.CSV"));
-            /*swi.WriteLine("Person 1, Person2, Interaction Time, Interaction Millisecond, Interaction, " + angle + "Interaction, WasTalking1, WasTalking2 ");
+            /*TextWriter swi = new StreamWriter(szAngleOutputFile.Replace(".CSV","INTERACTIONS.CSV"));
+            swi.WriteLine("Person 1, Person2, Interaction Time, Interaction Millisecond, Interaction, " + angle + "Interaction, WasTalking1, WasTalking2 ");
             Dictionary<String, Tuple<DateTime, DateTime>> filters = new Dictionary<string, Tuple<DateTime, DateTime>>();
             filters.Add("LRIC_APPLETREE_2324_2", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 9, 46, 58), new DateTime(2023, 10, 26, 9, 52, 12)));
             filters.Add("LRIC_APPLETREE_2324_9", new Tuple<DateTime, DateTime>(new DateTime(2023, 10, 26, 9, 52, 12), new DateTime(2023, 10, 26, 9, 57, 35)));
@@ -1012,9 +1017,12 @@ namespace UL_Processor_V2023
                             pair.subjectAliceVarsInContact.speech += ubiTenths[t][pair.szSubjectMapId].aliceVars.speech;
                             pair.partnerAliceVarsInContact.speech += ubiTenths[t][pair.szPartnerMapId].aliceVars.speech;
 
+ 
 
+                        }//insocialcontact
 
-
+                        //if (withinGofR && orientedCloseness)
+                        {
                             //FOR SOCIAL ONSETS
                             if (ubiTenths[t][pair.szSubjectMapId].wasTalking || ubiTenths[t][pair.szPartnerMapId].wasTalking)
                             {
@@ -1033,16 +1041,33 @@ namespace UL_Processor_V2023
                                         if (t.CompareTo(lenaOnsets[pair.szSubjectMapId][sPos].startTime) >= 0 &&
                                             t.CompareTo(lenaOnsets[pair.szSubjectMapId][sPos].endTime) <= 0)
                                         {
-                                            lenaOnsets[pair.szSubjectMapId][sPos].inSocialContact = true;
 
-                                            //teachersInContact
-                                            if(personBaseMappings[pair.szPartnerMapId].subjectType=="TEACHER"  )
+                                            if (withinGofR && orientedCloseness)
                                             {
-                                                if(!lenaOnsets[pair.szSubjectMapId][sPos].teachersInContact.Contains(pair.szPartnerMapId))
+
+                                                lenaOnsets[pair.szSubjectMapId][sPos].inSocialContactAnyTalking = true;
+
+                                                if (ubiTenths[t][pair.szSubjectMapId].wasTalking)
                                                 {
-                                                    lenaOnsets[pair.szSubjectMapId][sPos].teachersInContact.Add(pair.szPartnerMapId);
+                                                    lenaOnsets[pair.szSubjectMapId][sPos].inSocialContactSubjectTalking = true;
                                                 }
+
+                                                if (personBaseMappings[pair.szPartnerMapId].subjectType == "TEACHER")
+                                                {
+                                                    if (!lenaOnsets[pair.szSubjectMapId][sPos].teachersInContact.Contains(pair.szPartnerMapId))
+                                                    {
+                                                        lenaOnsets[pair.szSubjectMapId][sPos].teachersInContact.Add(pair.szPartnerMapId);
+                                                    }
+                                                }
+
                                             }
+                                            else if (ubiTenths[t][pair.szSubjectMapId].wasTalking && personBaseMappings[pair.szPartnerMapId].subjectType != "TEACHER")
+                                            {
+                                                 lenaOnsets[pair.szSubjectMapId][sPos].outsideKidsSocialContactSubjectTalking = true;
+                                            }
+
+
+
 
 
                                         }
@@ -1066,14 +1091,29 @@ namespace UL_Processor_V2023
                                         if (t.CompareTo(lenaOnsets[pair.szPartnerMapId][pPos].startTime) >= 0 &&
                                             t.CompareTo(lenaOnsets[pair.szPartnerMapId][pPos].endTime) <= 0)
                                         {
-                                            lenaOnsets[pair.szPartnerMapId][pPos].inSocialContact = true;
-                                            if (personBaseMappings[pair.szSubjectMapId].subjectType == "TEACHER")
+
+                                            if (withinGofR && orientedCloseness)
                                             {
-                                                if (!lenaOnsets[pair.szPartnerMapId][pPos].teachersInContact.Contains(pair.szSubjectMapId))
+                                                lenaOnsets[pair.szPartnerMapId][pPos].inSocialContactAnyTalking = true;
+                                                if (ubiTenths[t][pair.szPartnerMapId].wasTalking)
                                                 {
-                                                    lenaOnsets[pair.szPartnerMapId][pPos].teachersInContact.Add(pair.szSubjectMapId);
+                                                    lenaOnsets[pair.szPartnerMapId][pPos].inSocialContactSubjectTalking = true;
                                                 }
+
+                                                if (personBaseMappings[pair.szSubjectMapId].subjectType == "TEACHER")
+                                                {
+                                                    if (!lenaOnsets[pair.szPartnerMapId][pPos].teachersInContact.Contains(pair.szSubjectMapId))
+                                                    {
+                                                        lenaOnsets[pair.szPartnerMapId][pPos].teachersInContact.Add(pair.szSubjectMapId);
+                                                    }
+                                                }
+                                                
                                             }
+                                            else if (ubiTenths[t][pair.szPartnerMapId].wasTalking && personBaseMappings[pair.szSubjectMapId].subjectType != "TEACHER")
+                                            {
+                                                lenaOnsets[pair.szPartnerMapId][pPos].outsideKidsSocialContactSubjectTalking = true;
+                                            }
+
                                         }
                                     }
                                     onsetPos[pair.szPartnerMapId] = pPos;
@@ -1083,8 +1123,7 @@ namespace UL_Processor_V2023
 
                             }
 
-                        }//insocialcontact
-
+                        }
 
                         pair.subjectLenaVarsInWUBI.totalTurnCounts += ubiTenths[t][pair.szSubjectMapId].lenaVars.totalTurnCounts;
                         pair.subjectLenaVarsInWUBI.totalChildUttCount += ubiTenths[t][pair.szSubjectMapId].lenaVars.totalChildUttCount;
@@ -1235,7 +1274,7 @@ namespace UL_Processor_V2023
                 swapp.Close();
 
             //DEBUG DELETE ELAN INTERACTIONS
-            swi.Close();
+            //swi.Close();
             //DEBUG DELETE ELAN INTERACTIONS
             //Date	Subject	Partner	SubjectShortID	PartnerShortID	SubjectDiagnosis	PartnerDiagnosis	
             //SubjectGender	PartnerGender	SubjectLanguage	PartnerLanguage	Adult	SubjectStatus	PartnerStatus	SubjectType	PartnerType
@@ -1395,7 +1434,7 @@ namespace UL_Processor_V2023
 
              
 
-        public void makeGofRFilesAndTimeDict(String dir, String szOutputFile)
+        public void makeGofRFilesAndTimeDict(String dir, String szOutputFile, List<String> diagnosisList)
         {
 
             //DELETE OR DEBUG ??
@@ -1408,6 +1447,29 @@ namespace UL_Processor_V2023
             TextWriter swCotalk = new StreamWriter(szOutputFile.Replace("GR", "COTALK"));// countDays > 0);
             swCotalk.WriteLine("SUBJECTID,TIME,KC_X,KC_Y,KC_O,VOCCHNCHF_LENAKF");
             string[] ubiLogFiles = Directory.GetFiles(dir + "//" + szDayFolder + "//Ubisense_Denoised_Data//");
+
+            String newDiagnosis = "";
+            foreach (String d in diagnosisList)
+            {
+                newDiagnosis += (d + ",");
+            }
+            sw.WriteLine("LOCATION,SUBJECTIDANDTAGTYPE,TIME,X,Y,Z," + newDiagnosis+"TYPE");
+            /* 
+             * 
+             * 
+             *   sw.WriteLine("Location," +
+                                            subjectId + "L," +
+                                            lineCols[0] + "," +
+                                            lineCols[13] + "," +
+                                            lineCols[14] + "," +
+                                            lineCols[3]
+                                            );
+             * foreach (String d in subject.diagnosisList)
+            {
+                newPairDiagnosis += (d + "," + (partner.diagnosisList.Count > pos ? partner.diagnosisList[pos] : "") + ",");
+                newPairDiagnosisP += ((partner.diagnosisList.Count > pos ? partner.diagnosisList[pos] : "") + "," + d + ",");
+                pos++;
+            }*/
 
             //TextWriter swl = new StreamWriter(szOutputFile.Replace(".CSV","_L.csv"));// countDays > 0);
             //TextWriter swr = new StreamWriter(szOutputFile.Replace(".CSV", "_R.csv"));// countDays > 0);
@@ -1423,8 +1485,6 @@ namespace UL_Processor_V2023
 
                     if (personDayMappings.ContainsKey(subjectId))
                     {
-                        //DELETE PersonDayInfo pdi = personDayMappings[subjectId];
-
                         using (StreamReader sr = new StreamReader(file))
                         {
                             if (!sr.EndOfStream)
@@ -1435,7 +1495,7 @@ namespace UL_Processor_V2023
                              chn_vocal   chf_vocal adult_vocal chn_vocal_average_dB chf_vocal_average_dB    adult_vocal_average_dB chn_vocal_peak_dB   chf_vocal_peak_dB adult_vocal_peak_dB
 
                             2022 - 01-28 08:58:00.200,1.3800916038677513,4.36540153126917,0.4596901265437715,0.9715147678818095,4.272437575392713,0.544450214826891,2.917870339559073,0.41901948402966077,1.1758031858747804,4.318919553330941,0.5020701706853312,2.917870339559072,1.3800916038677513,4.36540153126917,0.9715147678818095,4.272437575392712,0.41901948402966077,1.1758031858747804,4.318919553330941*/
-                             
+
                             while (!sr.EndOfStream)
                             {
                                 String szLine = sr.ReadLine();
@@ -1444,22 +1504,31 @@ namespace UL_Processor_V2023
                                 
                                 if (lineCols.Length > 19 && lineCols[19].Trim() != "")
                                 {
+                                    PersonDayInfo pdi = personDayMappings[subjectId];
+
                                     Boolean filterOut = this.toFilter && Utilities.specialFilterOut(lineCols[0]);
                                     if (!filterOut)
                                     {
+                                        String sDiagnosis = "";
+                                        String sType = personBaseMappings[subjectId].subjectType.ToUpper();
+                                        foreach (String d in personBaseMappings[subjectId].diagnosisList)
+                                        {
+                                            sDiagnosis += (d + ",");
+                                        }
+
                                         sw.WriteLine("Location," +
                                             subjectId + "L," +
                                             lineCols[0] + "," +
                                             lineCols[13] + "," +
                                             lineCols[14] + "," +
-                                            lineCols[3]
-                                            );
+                                            lineCols[3] + "," + sDiagnosis+ sType
+                                            ); ;
                                         sw.WriteLine("Location," +
                                             subjectId + "R," +
                                             lineCols[0] + "," +
                                             lineCols[15] + "," +
                                             lineCols[16] + "," +
-                                            lineCols[6]
+                                            lineCols[6] + "," + sDiagnosis+ sType
                                             );
 
 
@@ -1547,7 +1616,83 @@ namespace UL_Processor_V2023
             swCotalk.Close();
             this.ubiTenths = this.ubiTenths.OrderBy(x => x.Key).ThenBy(x => x.Key.Millisecond).ToDictionary(x => x.Key, x => x.Value);
         }
+        public void makeTimeDict(String dir)
+        {
+            String szDayFolder = Utilities.getDateDashStr(classDay);
+            string[] ubiLogFiles = Directory.GetFiles(dir + "//" + szDayFolder + "//Ubisense_Denoised_Data//");
 
+            foreach (string file in ubiLogFiles)
+            {
+                String fileName = Path.GetFileName(file);
+                if (fileName.EndsWith(".csv"))
+                {
+                    int subjectIdx = fileName.IndexOf("_filtered_") + 10;
+                    String subjectId = fileName.Substring(fileName.LastIndexOf("_filtered_") + 10).Replace(".csv", "").ToUpper();
+
+                    if (personDayMappings.ContainsKey(subjectId))
+                    {
+                        using (StreamReader sr = new StreamReader(file))
+                        {
+                            if (!sr.EndOfStream)
+                            {
+                                sr.ReadLine();
+                            }
+                            /*Time,lx,ly,lz,rx,ry,rz,o,dis2d,cx,cy,cz,o_kf,lx_kf,ly_kf,rx_kf,ry_kf,dis2d_kf,cx_kf,cy_kf
+                             chn_vocal   chf_vocal adult_vocal chn_vocal_average_dB chf_vocal_average_dB    adult_vocal_average_dB chn_vocal_peak_dB   chf_vocal_peak_dB adult_vocal_peak_dB
+
+                            2022 - 01-28 08:58:00.200,1.3800916038677513,4.36540153126917,0.4596901265437715,0.9715147678818095,4.272437575392713,0.544450214826891,2.917870339559073,0.41901948402966077,1.1758031858747804,4.318919553330941,0.5020701706853312,2.917870339559072,1.3800916038677513,4.36540153126917,0.9715147678818095,4.272437575392712,0.41901948402966077,1.1758031858747804,4.318919553330941*/
+
+                            while (!sr.EndOfStream)
+                            {
+                                String szLine = sr.ReadLine();
+                                String[] lineCols = szLine.Split(',');
+
+
+                                if (lineCols.Length > 19 && lineCols[19].Trim() != "")
+                                {
+                                    PersonDayInfo pdi = personDayMappings[subjectId];
+
+                                    Boolean filterOut = this.toFilter && Utilities.specialFilterOut(lineCols[0]);
+                                    if (!filterOut)
+                                    {
+
+                                        int isTalking = ((lineCols.Length > 20 && lineCols[20].Trim() == "1") || (lineCols.Length > 21 && lineCols[21].Trim() == "1") ? 1 : 0);
+                                        DateTime timeMs = Utilities.getDate(lineCols[0]);
+
+
+                                        if (!this.ubiTenths.ContainsKey(timeMs))
+                                        {
+                                            this.ubiTenths.Add(timeMs, new Dictionary<string, PersonSuperInfo>());
+                                        }
+
+                                        if (!this.ubiTenths[timeMs].ContainsKey(subjectId))
+                                        {
+                                            PersonSuperInfo psi = new PersonSuperInfo();
+                                            psi.xl = Convert.ToDouble(lineCols[13]);
+                                            psi.yl = Convert.ToDouble(lineCols[14]);
+                                            psi.xr = Convert.ToDouble(lineCols[15]);
+                                            psi.yr = Convert.ToDouble(lineCols[16]);
+
+                                            psi.x = Convert.ToDouble(lineCols[18]);
+                                            psi.y = Convert.ToDouble(lineCols[19]);
+                                            psi.z = Convert.ToDouble(lineCols[3]);
+                                            psi.orientation_pi = Convert.ToDouble(lineCols[12]);
+                                            psi.orientation_deg = Convert.ToDouble(Convert.ToDouble(lineCols[12]) * (180 / Math.PI));
+                                            this.ubiTenths[timeMs].Add(subjectId, psi);
+                                        }
+
+                                    }
+
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+
+            this.ubiTenths = this.ubiTenths.OrderBy(x => x.Key).ThenBy(x => x.Key.Millisecond).ToDictionary(x => x.Key, x => x.Value);
+        }
         public void getTenthsFromUbi(String dir, String sGrOutputFile)
         {
             String szDayFolder = Utilities.getDateDashStr(classDay);
@@ -2728,9 +2873,19 @@ namespace UL_Processor_V2023
             }
             return new PersonDayInfo();
         }
-      
+        public PersonDayInfo getPersonInfoBySony(String sonyId)
+        {
+            foreach (PersonDayInfo pdi in personDayMappings.Values)
+            {
+                if (pdi.sonyId == sonyId && pdi.present && pdi.status == "PRESENT")
+                {
+                    return pdi;
+                }
+            }
+            return new PersonDayInfo();
+        }
 
-                   
+
         public static DateTime getMsTime(DateTime first)
         {
             //int ms = t.Millisecond > 0 ? t.Millisecond / 100 * 100 : t.Millisecond;// + 100;

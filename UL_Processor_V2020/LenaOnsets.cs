@@ -30,7 +30,9 @@ namespace UL_Processor_V2023
         public double tc = 0;
         public double avgDb = 0;
         public double peakDb = 0;
-        public Boolean inSocialContact = false;
+        public Boolean inSocialContactAnyTalking = false;
+        public Boolean outsideKidsSocialContactSubjectTalking = false;
+        public Boolean inSocialContactSubjectTalking = false;
         public List<String> teachersInContact = new System.Collections.Generic.List<String>();
 
 

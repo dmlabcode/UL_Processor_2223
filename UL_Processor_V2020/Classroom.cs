@@ -1102,8 +1102,8 @@ namespace UL_Processor_V2023
                 filesToMerge["ONSETS"].Add(szOnsetOutputFile);
                  
                 //GR
-                String sGrOutputFile = dir + "//SYNC//GR//DAYGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                classRoomDay.makeGofRFilesAndTimeDict(dir, sGrOutputFile);
+                String sGrOutputFile = dir + "//SYNC//GR//DAYGR_TYPE_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                classRoomDay.makeGofRFilesAndTimeDict(dir, sGrOutputFile, this.diagnosisList);
 
                 String szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
 

@@ -97,6 +97,7 @@
     <Compile Include="QAKalman.cs" />
     <Compile Include="UbiLocation.cs" />
     <Compile Include="Utilities.cs" />
+    <Compile Include="WhisperSync.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
