@@ -1331,12 +1331,12 @@ namespace UL_Processor_V2023
                             {
                                 String commaLine = sr.ReadLine();
                                 String[] line = commaLine.Split(',');
-                                int cp = 0;
+                                int cp = line[0].Trim().ToUpper()!="ROSTER"?0:1;
                                 foreach (String header in line)
                                 {
                                     if (!header.ToUpper().Trim().Contains("ID_VEST_LENA_TAGS"))//sf day mappings done w this column for 2223.... 
                                     {
-                                        if (header.ToUpper().Trim().Contains("SUBJECT") && header.ToUpper().Trim().Contains("ID") && (!header.ToUpper().Trim().Contains("SHORT")))
+                                        if (header.ToUpper().Trim().Contains("SUBJECT") && header.ToUpper().Trim().Contains("ID") && (!header.ToUpper().Trim().Contains("SHORT")) && columnIndex["LONGID"] < 0)
                                         {
                                             columnIndex["LONGID"] = cp;
                                         }
@@ -1693,13 +1693,26 @@ namespace UL_Processor_V2023
 
             this.ubiTenths = this.ubiTenths.OrderBy(x => x.Key).ThenBy(x => x.Key.Millisecond).ToDictionary(x => x.Key, x => x.Value);
         }
+        /// <summary>
+        /// //////
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <param name="sGrOutputFile"></param>
         public void getTenthsFromUbi(String dir, String sGrOutputFile)
+        {
+            getTenthsFromUbi( dir,  sGrOutputFile, true);
+        }
+        public void getTenthsFromUbi(String dir, String sGrOutputFile, Boolean makeGrFile)
         {
             String szDayFolder = Utilities.getDateDashStr(classDay);
             string[] ubiLogFiles = Directory.GetFiles(dir + "//" + szDayFolder + "//Ubisense_Data//");
-            Dictionary<String,List<UbiLocation>> ubiLefts = new Dictionary<String,List<UbiLocation>>();
+            Dictionary<String, List<UbiLocation>> ubiLefts = new Dictionary<String, List<UbiLocation>>();
             Dictionary<String, List<UbiLocation>> ubiRights = new Dictionary<String, List<UbiLocation>>();
-            TextWriter sw = new StreamWriter(sGrOutputFile, false);
+
+
+            TextWriter sw = new StreamWriter(sGrOutputFile, true);
+
+
             foreach (string file in ubiLogFiles)
             {
                 String fileName = Path.GetFileName(file);
@@ -1712,26 +1725,26 @@ namespace UL_Processor_V2023
                             //Location,00:11:CE:00:00:00:02:14,2023-02-10 08:50:00.835,1.35892486572266,2.7289354801178,0.25,
                             String szLine = sr.ReadLine();
                             String[] lineCols = szLine.Split(',');
-                            UbiLocation ubiLoc = new UbiLocation();
-                            ubiLoc.tag = lineCols[1];
-                            DateTime lineTime = Convert.ToDateTime(lineCols[2]);
-                            findTagPerson(ref ubiLoc, lineTime);
-
+                             
                             //Location,PR_LEAP_2122_T3L,2021-10-25 8:46:01.0,1.6005289068222,5.75430334854126,1
                             if (lineCols.Length > 5 && lineCols[5] != "")
                             {
+                                UbiLocation ubiLoc = new UbiLocation();
+                                ubiLoc.tag = lineCols[1];
+                                DateTime lineTime = Convert.ToDateTime(lineCols[2]);
+                                findTagPerson(ref ubiLoc, lineTime);
                                 String subject = ubiLoc.id;
-                                
+
                                 ubiLoc.time = lineTime;
                                 ubiLoc.x = Convert.ToDouble(lineCols[3]);
                                 ubiLoc.y = Convert.ToDouble(lineCols[4]);
-                                if (ubiLoc.type=="L")
+                                if (ubiLoc.type == "L")
                                 {
-                                    if(!ubiLefts.ContainsKey(subject))
-                                    ubiLefts.Add(subject, new List<UbiLocation>());
+                                    if (!ubiLefts.ContainsKey(subject))
+                                        ubiLefts.Add(subject, new List<UbiLocation>());
                                     ubiLefts[subject].Add(ubiLoc);
                                 }
-                                else 
+                                else
                                 {
                                     if (!ubiRights.ContainsKey(subject))
                                         ubiRights.Add(subject, new List<UbiLocation>());
@@ -1743,48 +1756,75 @@ namespace UL_Processor_V2023
                     }
                 }
             }
+            Dictionary<String, Tuple<double, double,String>> interpolaionSecs = new Dictionary<String, Tuple<double, double,String>>();
             Dictionary<DateTime, Dictionary<String, PersonInfo>> ubiTenthsL = getTenths(ubiLefts);
             Dictionary<DateTime, Dictionary<String, PersonInfo>> ubiTenthsR = getTenths(ubiRights);
+            Dictionary<String, double> subjectInterpolatedSecs = new Dictionary<String, double>();
             foreach (DateTime szTimeStamp in ubiTenthsL.Keys)
             {
-                if (ubiTenthsR.ContainsKey(szTimeStamp))
+                Boolean timeExistsInRights = ubiTenthsR.ContainsKey(szTimeStamp);
+                if (timeExistsInRights || (!makeGrFile))
                 {
                     foreach (String person in ubiTenthsL[szTimeStamp].Keys)
                     {
+                        PersonInfo personInfo = ubiTenthsL[szTimeStamp][person];
 
-                        if (ubiTenthsR[szTimeStamp].ContainsKey(person))
+                        if (ubiTenthsR.ContainsKey(szTimeStamp) && ubiTenthsR[szTimeStamp].ContainsKey(person))
                         {
-                            PersonInfo personInfo = ubiTenthsL[szTimeStamp][person];
-                            sw.WriteLine("Location," +
+                            PersonInfo personInfoR = ubiTenthsR[szTimeStamp][person];
+                            if (makeGrFile)
+                            {
+                                sw.WriteLine("Location," +
                                     person + "L," +
-                                    Utilities.getDateStrYYMMDD(personInfo.time, "-", 0)+" "+
-                                    Utilities.getTimeStr(personInfo.time)+","+
+                                    Utilities.getDateStrYYMMDD(personInfo.time, "-", 0) + " " +
+                                    Utilities.getTimeStr(personInfo.time) + "," +
                                     personInfo.x + "," +
                                     personInfo.y + "," +
                                     personInfo.z);
 
 
-                            PersonInfo personInfoR = ubiTenthsR[szTimeStamp][person];
-                            sw.WriteLine("Location," +
-                                    person + "R," +
-                                    Utilities.getDateStrYYMMDD(personInfoR.time, "-", 0) + " " +
-                                    Utilities.getTimeStr(personInfoR.time) + "," +
-                                    personInfoR.x + "," +
-                                    personInfoR.y + "," +
-                                    personInfoR.z);
-                            //4/6/2023 8:31:00 AM   2023-01-24 10:32:55.940   
 
+                                sw.WriteLine("Location," +
+                                        person + "R," +
+                                        Utilities.getDateStrYYMMDD(personInfoR.time, "-", 0) + " " +
+                                        Utilities.getTimeStr(personInfoR.time) + "," +
+                                        personInfoR.x + "," +
+                                        personInfoR.y + "," +
+                                        personInfoR.z);
+                                //4/6/2023 8:31:00 AM   2023-01-24 10:32:55.940   
+                            }
+                            if (!interpolaionSecs.ContainsKey(person))
+                            {
+                                
+                                interpolaionSecs.Add(person, new Tuple<double, double, String>(0, 0, personBaseMappings[person].shortId));
 
+                            }
+
+                            double intSecs = personInfo.interpolated && personInfoR.interpolated ? .1 : 0;
+                             
+                            Tuple<double, double,String> ii = new Tuple<double, double,String>(interpolaionSecs[person].Item1 + intSecs, interpolaionSecs[person].Item2 + .1, interpolaionSecs[person].Item3);
+                            interpolaionSecs[person] = ii;
                         }
                     }
                 }
 
 
             }
-            sw.Close();
+            if (!makeGrFile)
+            {
+                     
+                foreach (String p in interpolaionSecs.Keys)
+                {
+                    sw.WriteLine(p + ","+ interpolaionSecs[p].Item3+","+classDay + "," + interpolaionSecs[p].Item1 + "," + interpolaionSecs[p].Item2);
+                }
+            }
+
+                sw.Close();
         }
+
+
         public Dictionary<DateTime, Dictionary<String, PersonInfo>> getTenths(Dictionary<String, List<UbiLocation>> ubiLocations)
-        {
+        { 
             Dictionary<DateTime, Dictionary<String, PersonInfo>> dayActivities = new Dictionary<DateTime, Dictionary<string, PersonInfo>>();
             foreach (String personId in ubiLocations.Keys)
             {
@@ -1816,6 +1856,7 @@ namespace UL_Processor_V2023
                 }
                 //Boolean subjFoundClose = true;
                 string line = "";
+                int lastIndex = 0;
                 while (target.CompareTo(last) <= 0)
                 {
                     /******/
@@ -1828,6 +1869,7 @@ namespace UL_Processor_V2023
                     {
                         index = ~index;
                     }
+                     
                     if (index > 0)
                     {
 
@@ -1845,41 +1887,38 @@ namespace UL_Processor_V2023
                             double orientation2 = 0;// ubiLoc[index].ori;
                             double targetorientation = linearInterpolate(target, ubiLoc[index - 1].time, orientation1, ubiLoc[index].time, orientation2);
                             PersonInfo pi2 = new PersonInfo();
-                            if (difference.TotalSeconds < 60)
+                          
+                            //if (difference.TotalSeconds < 60)
                             {
                                 //if (!subjFoundClose)
                                 //    sw.WriteLine(line + "," + ubiLoc[index].time.ToLongTimeString() + "," + ubiLoc[index].time.Millisecond);
 
-                               // subjFoundClose = true;
-
+                                // subjFoundClose = true
+                                 
+                                if (lastIndex == index)
+                                {  
+                                    pi2.interpolated = true;
+                                }
+                                
                                 pi2.x = targetpoint.Item1;
                                 pi2.y = targetpoint.Item2;
+
+                                pi2.time = target;
+
+                                if (!dayActivities.ContainsKey(target))
+                                    dayActivities.Add(target, new Dictionary<string, PersonInfo>());
+
+                                if (!dayActivities[target].ContainsKey(personId))
+                                    dayActivities[target].Add(personId, pi2);
                             }
-                            else
-                            {
-                                pi2.x = -5;
-                                pi2.y = -5;
-
-                               // if (subjFoundClose)
-                                    line = personId + "," + difference.TotalSeconds + "," + first.ToShortDateString() + "," + target.ToLongTimeString() + "," + target.Millisecond;// sw.WriteLine(personId + "," + difference.TotalSeconds + "," + first.ToShortDateString());
-                                //subjFoundClose = false;
-
-                            }
-                            pi2.time = target;
-
-                            if (!dayActivities.ContainsKey(target))
-                                dayActivities.Add(target, new Dictionary<string, PersonInfo>());
-
-                            if (!dayActivities[target].ContainsKey(personId))
-                                dayActivities[target].Add(personId, pi2);
 
                         }
                        
                     }
-                    
+                    lastIndex = index;
                     target = target.AddMilliseconds(100);
                 }
-
+                 
             }
             return dayActivities;
         }
@@ -3158,6 +3197,205 @@ namespace UL_Processor_V2023
 
             }
  
+        }
+        public void setTenthOfSecLENAALICE(String dir, String className, Dictionary<String, Tuple<String, DateTime>> lenaStartTimes)
+        {
+            String beepOnsetFile = dir + "//BEEPONSETS_" + className + ".csv";
+            Dictionary<String, double> sonyOnsetSecs = new Dictionary<String, double>();
+            Dictionary<String, DateTime> sonyStartTimes = new Dictionary<String, DateTime>();
+            Dictionary<String, String> subjectToSonyFile = new Dictionary<String, String>();
+            DateTime lenaBeepTime = DateTime.Now;
+            double lenaBeepOnset = 0;
+            String szLenaSubjectFound = "";
+            if (File.Exists(beepOnsetFile))
+                using (StreamReader sr = new StreamReader(beepOnsetFile))
+                {
+                    if (!sr.EndOfStream)
+                    {
+                        String commaLine = sr.ReadLine();
+                        String[] line = commaLine.Split(',');
+
+                        while (!sr.EndOfStream)
+                        {
+                            commaLine = sr.ReadLine();
+                            line = commaLine.Split(',');
+                            if (line.Length > 3 && line[1] != "")
+                            {
+                                try
+                                {
+                                    if (lenaBeepOnset == 0)
+                                        foreach (String itsFileName in lenaStartTimes.Keys)
+                                        {
+                                            if (itsFileName == line[1].Trim().Replace(".wav", ".its"))
+                                            {
+                                                szLenaSubjectFound = lenaStartTimes[itsFileName].Item1;
+                                                lenaBeepOnset = Convert.ToDouble(line[2]);
+                                                lenaBeepTime = lenaStartTimes[itsFileName].Item2;
+                                                break;
+                                            }
+                                        }
+                                    if (line[3].Trim().Contains(Utilities.getDateDashStr(this.classDay)))
+                                    {
+                                        String sonyNumber = line[1].Substring(0, line[1].IndexOf("_"));
+                                        if (sonyNumber.StartsWith("0"))
+                                        {
+                                            sonyNumber = sonyNumber.Substring(1);
+                                        }
+                                        sonyNumber = sonyNumber.Trim();
+                                        foreach (String sk in this.personDayMappings.Keys)
+                                        {
+                                            if (personDayMappings[sk].sonyId == sonyNumber)
+                                            {
+                                                if (!sonyOnsetSecs.ContainsKey(sk))
+                                                {
+                                                    sonyOnsetSecs.Add(sk, Convert.ToDouble(line[2]));
+                                                    subjectToSonyFile.Add(line[1].Replace(".wav", "").Trim(), sk);
+                                                }
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                }
+            //DEBUG ADD if (lenaBeepOnset != 0)
+            foreach (String sonyUser in sonyOnsetSecs.Keys)
+            {
+                DateTime sonyStartTime = lenaBeepTime.AddSeconds(-sonyOnsetSecs[sonyUser]);
+
+                sonyStartTimes.Add(sonyUser, sonyStartTime);
+            }
+            String szDayFolder = Utilities.getDateDashStr(classDay);
+
+            string[] szAliceFiles = Directory.GetFiles(dir + "//" + szDayFolder + "//Alice_Data//", "*.rttm");
+            foreach (String aliceFile in szAliceFiles)
+            {
+                using (StreamReader sr = new StreamReader(aliceFile))
+                {
+                    while (!sr.EndOfStream)
+                    {
+                        String szLine = sr.ReadLine();
+                        String[] line = szLine.Split(' ');
+                        if (line.Length >= 7)
+                        {
+                            if (subjectToSonyFile.ContainsKey(line[1].Trim()))
+                            {
+                                try
+                                {
+                                    String subject = subjectToSonyFile[line[1].Trim()];
+                                    String szSartTime = line[3];
+                                    String szBlockDur = line[4];
+                                    String szType = line[7];
+                                    PersonDayInfo pdi = personDayMappings[subject];
+                                    double blockDur = Convert.ToDouble(szBlockDur);
+                                    DateTime startTime = sonyStartTimes[subject];
+                                    int ms = startTime.Millisecond > 0 ? startTime.Millisecond / 100 * 100 : startTime.Millisecond;// + 100;
+                                    startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, startTime.Minute, startTime.Second, ms);
+                                    startTime = startTime.AddSeconds(Convert.ToDouble(szSartTime));
+                                    DateTime timeEnd = startTime.AddSeconds(blockDur);
+                                    ms = timeEnd.Millisecond > 0 ? timeEnd.Millisecond / 100 * 100 : timeEnd.Millisecond;// + 100;
+                                    timeEnd = new DateTime(timeEnd.Year, timeEnd.Month, timeEnd.Day, timeEnd.Hour, timeEnd.Minute, timeEnd.Second, ms);
+                                    DateTime time = startTime;
+
+                                    do
+                                    {
+                                        /*PersonDayInfo pdi = getPersonInfoByLena(szLenaId);
+                 start >= pdi.startDate &&
+                             start <= pdi.endDate)*/
+                                        if (time >= pdi.startDate &&
+                                            time <= pdi.endDate)
+                                        {
+                                            Boolean WUBI = ubiTenths.ContainsKey(time) && ubiTenths[time].ContainsKey(subject);
+                                            if (WUBI)
+                                            {
+                                                bool stop = true;
+                                            }
+
+
+                                            switch (szType)
+                                            {
+                                                case "KCHI":
+                                                    personDayMappings[subject].totalAliceVars.kchi += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.kchi += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.kchi += .1;
+                                                    }
+                                                    break;
+                                                case "CHI":
+                                                    personDayMappings[subject].totalAliceVars.chi += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.chi += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.chi += .1;
+                                                    }
+                                                    break;
+                                                case "FEM":
+                                                    personDayMappings[subject].totalAliceVars.fem += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.fem += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.fem += .1;
+                                                    }
+                                                    break;
+                                                case "MAL":
+                                                    personDayMappings[subject].totalAliceVars.mal += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.mal += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.mal += .1;
+                                                    }
+                                                    break;
+                                                case "SPEECH":
+                                                    personDayMappings[subject].totalAliceVars.speech += .1;
+                                                    if (WUBI)
+                                                    {
+                                                        ubiTenths[time][subject].aliceVars.speech += .1;
+                                                        personDayMappings[subject].WUBIAliceVars.speech += .1;
+                                                    }
+                                                    break;
+
+                                            }
+                                        }
+                                        time = time.AddMilliseconds(100);
+                                        blockDur = Math.Round(blockDur - 0.1, 2);
+                                    } while (blockDur > 0);
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e.Message);
+
+                                }
+                                /*DateTime time = lenaOnset.startTime;
+                    int ms = time.Millisecond > 0 ? time.Millisecond / 100 * 100 : time.Millisecond;// + 100;
+                    time = new DateTime(time.Year, time.Month, time.Day, time.Hour, time.Minute, time.Second, ms);
+                    DateTime timeEnd = lenaOnset.startTime.AddSeconds(lenaOnset.durSecs);
+                    ms = timeEnd.Millisecond > 0 ? timeEnd.Millisecond / 100 * 100 : timeEnd.Millisecond;// + 100;
+                    timeEnd = new DateTime(timeEnd.Year, timeEnd.Month, timeEnd.Day, timeEnd.Hour, timeEnd.Minute, timeEnd.Second, ms);
+
+                    double blockDur = (timeEnd - time).Seconds + ((timeEnd - time).Milliseconds > 0 ? ((timeEnd - time).Milliseconds / 1000.00) : 0);
+                    double vocDur10 = (lenaOnset.durSecs / blockDur) / 10;
+                    double vocCount10 = (lenaOnset.count / blockDur) / 10;
+                    double tcCount10 = (lenaOnset.tc / blockDur) / 10;
+
+
+                    Boolean personExists = personDayMappings.ContainsKey(person);
+                    if( personExists && blockDur>0)
+                    {
+
+                        switch (lenaOnset.type)
+                        {*/
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
         }
         public void setTenthOfSecALICE(String dir, String className, Dictionary<String, Tuple<String, DateTime>> lenaStartTimes)
         {

@@ -86,6 +86,8 @@
     <Compile Include="AliceVars.cs" />
     <Compile Include="Classroom.cs" />
     <Compile Include="ClassroomDay.cs" />
+    <Compile Include="CompareAlice.cs" />
+    <Compile Include="InterpolationInfo.cs" />
     <Compile Include="LenaOnsets.cs" />
     <Compile Include="LenaVars.cs" />
     <Compile Include="Pair.cs" />

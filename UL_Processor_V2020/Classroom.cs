@@ -9,6 +9,7 @@ using System.Xml;
 using IronPython.Compiler;
 using System.Web.UI.WebControls;
 using System.Security.Policy;
+using System.Threading;
 
 namespace UL_Processor_V2023
 {
@@ -25,6 +26,8 @@ namespace UL_Processor_V2023
         public Boolean includeAlice = false;
         public String dir = "";
         public String className = "";
+        public String classFolder = "";
+        public String mapPrefix = "";
         public double grMin = 0;
         public double grMax = 0;
         public double angle = 45;
@@ -175,7 +178,7 @@ namespace UL_Processor_V2023
                     {//
                         String commaLine = sr.ReadLine();
                         String[] line = commaLine.Split(',');
-                        int cp = 0;
+                        int cp = line[0].Trim().ToUpper()!="ROSTER"?0:1;
                         foreach (String szCol in line)
                         {
                             if (szCol.ToUpper().Trim().Contains("DIAGNOSIS") || szCol.ToUpper().Trim().Contains("DEVICE"))
@@ -258,7 +261,9 @@ namespace UL_Processor_V2023
         }
         public void setDirs()
         {
-            dir = dir + className;
+            classFolder = classFolder == "" ? className : classFolder;
+            mapPrefix = mapPrefix == "" ? className : mapPrefix;
+            dir = dir + classFolder;
         }
         public void createReportDirs()
         {
@@ -280,7 +285,8 @@ namespace UL_Processor_V2023
 
             if (!Directory.Exists(dir + "//SYNC//APPROACH"))
                 Directory.CreateDirectory(dir + "//SYNC//APPROACH");
-
+            if (!Directory.Exists(dir + "//SYNC//UBIGR"))
+                Directory.CreateDirectory(dir + "//SYNC//UBIGR");
         }
         public void makeDayReportLists()
         {
@@ -297,7 +303,7 @@ namespace UL_Processor_V2023
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
                 //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
-                classRoomDay.setMappings(dir ,className, personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir ,mapPrefix, personBaseMappings, mapById, startHour, endHour, endMinute);
 
                 if (this.isSewio)
                     handleSewio(ref classRoomDay);
@@ -310,6 +316,7 @@ namespace UL_Processor_V2023
         public void handleSewio(ref ClassroomDay classRoomDay)
         {
             //HANDLE SWEIO TO UBI FORMAT
+            Dictionary<DateTime, List<String>> timeSewios = new Dictionary<DateTime, List<string>>();
             String szUbiFolder = dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//Ubisense_Data";
 
             if (Directory.Exists(szUbiFolder))
@@ -318,8 +325,9 @@ namespace UL_Processor_V2023
 
             }
             Directory.CreateDirectory(szUbiFolder);
-            String sewioFolder = dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//Ubisense_Data";
-            Dictionary<DateTime,List<String>> data = new Dictionary<DateTime, List<String>>();
+            TextWriter sw = new StreamWriter(szUbiFolder+ "//MiamiLocation."+ Utilities.getDateDashStr(classRoomDay.classDay)+"_00-00-SE-WIO.log");// dir + "//" + syncFolder + "//PAIRACTIVITY//PAIRACTIVITY_" + reportClassYear + "_" + Utilities.szVersion + "ALL.CSV");
+
+            String sewioFolder = dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//Sewio_Data"; 
             if (Directory.Exists(sewioFolder))
             {
                 String[] files = Directory.GetFiles(sewioFolder);
@@ -338,25 +346,62 @@ namespace UL_Processor_V2023
                             {
                                 String szLine = sr.ReadLine();
                                 String[] lineCols = szLine.Split(',');
-                                //Tag Label	X	Y	Time (UTC)
-                                if (lineCols.Length > 17 && lineCols[17] != "")
+                                //TagLabel	X	Y	Time (UTC)
+                                if (lineCols.Length > 3 && lineCols[3] != "")
                                 {
+                                    //Location,00:11:CE:00:00:00:FE:CA,2024-05-17 08:58:23.004,1.59619808197021,3.38081121444702,0.5,
+                                    String szSewioTag = lineCols[0].Trim();//1lb t1lb 11lb
+                                    String szSide = szSewioTag.Contains("B")? szSewioTag.Substring(szSewioTag.Length - 2,1):szSewioTag.Substring(szSewioTag.Length - 1);
+                                        //1L 11L T11L 1LB 11LB T11LB
+                                        szSewioTag =    (szSewioTag.Length == 2 ? "00:11:CE:00:00:00:00:" + szSewioTag :
+                                                          szSewioTag.Length == 3 ? "00:11:CE:00:00:00:0" + szSewioTag.Substring(0, 1) + ":" + szSewioTag.Substring(1, 2) :
+                                                          szSewioTag.Length == 4 ? "00:11:CE:00:00:00:" + szSewioTag.Substring(0, 2) + ":" + szSewioTag.Substring(2, 2) :
+                                                          szSewioTag.Length == 5 ? "00:11:CE:00:00:0" + szSewioTag.Substring(0, 1) + ":" + szSewioTag.Substring(1, 2) + ":" + szSewioTag.Substring(2, 2) : "") ;
 
-                                }
+                                        String szDate = lineCols[3];
+                                        if (!(szDate.Contains("-")|| szDate.Contains("/")))
+                                        {
+                                            szDate = Utilities.getDateDashStr(classRoomDay.classDay) + " " + szDate;
+                                        }
+                                        DateTime convertedDate = DateTime.SpecifyKind(
+                                                                 DateTime.Parse(szDate),
+                                                                 DateTimeKind.Utc);
+                                        TimeZoneInfo easternZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+                                        DateTime easternTime = TimeZoneInfo.ConvertTimeFromUtc(convertedDate, easternZone);
+                                        //easternTime = easternTime.AddHours(-1);
+                                        String szTime = Utilities.getDateStrYYMMDD(easternTime, "-", 0)+" "+Utilities.getTimeStr(easternTime);
+                                        if(!timeSewios.ContainsKey(easternTime))
+                                        {
+                                            timeSewios.Add(easternTime, new List<String>());
+                                        }
+                                        timeSewios[easternTime].Add("Location," + szSewioTag + "," + szTime + "," + lineCols[1] + "," + lineCols[2] + ",0.5");
+                                        //sw.WriteLine("Location," + szSewioTag+ "," + szTime +","+ lineCols[1] + "," + lineCols[2]+ ",0.5");
+                                    }
+                                
                             }
                         }
                     }
                 }
 
             }
-
+            timeSewios = timeSewios.OrderBy(x => x.Key).ThenBy(x => x.Key.Millisecond).ToDictionary(x => x.Key, x => x.Value);
+            
+            foreach(DateTime dt in timeSewios.Keys)
+            {
+                foreach(String line in timeSewios[dt])
+                {
+                    sw.WriteLine(line);
+                }
+            }
+            
+            sw.Close();
         }
         public void denoise()
         {
             foreach (DateTime day in classRoomDays)
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
-                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir, mapPrefix, personBaseMappings, mapById, startHour, endHour, endMinute);
                 //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
 
                 //CLEAN, DENOISE
@@ -372,7 +417,7 @@ namespace UL_Processor_V2023
 
 
                 }
-                classRoomDay.createDenoisedFile(dir, className);//, startHour, endHour);
+                classRoomDay.createDenoisedFile(dir, mapPrefix);//, startHour, endHour);
             }
 
         }
@@ -1065,11 +1110,11 @@ namespace UL_Processor_V2023
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
                 //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
-                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir, mapPrefix, personBaseMappings, mapById, startHour, endHour, endMinute);
 
                 //GR
-                String sGrOutputFile = dir + "//SYNC//GR//DAYUBIGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                if(doTenths)
+                String sGrOutputFile = dir + "//SYNC//"+( doTenths?"": "UBI") +"GR//DAYUBIGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                if (doTenths)
                 {
                     sGrOutputFile=sGrOutputFile.Replace(".CSV", "10TH.CSV");
                     classRoomDay.getTenthsFromUbi(dir, sGrOutputFile);
@@ -1078,8 +1123,33 @@ namespace UL_Processor_V2023
                 classRoomDay.makeGofRFilesAndTimeDictFromUbi(dir, sGrOutputFile);//
             }
         }
+        public void processUbiInterpolation()
+        {
 
-        
+            /*4.1 For each Collection Day process daily files*/
+            foreach (DateTime day in classRoomDays)
+            {
+                ClassroomDay classRoomDay = new ClassroomDay(day);
+                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
+
+                if (!Directory.Exists(dir + "//SYNC//INTERPOLATION"))
+                    Directory.CreateDirectory(dir + "//SYNC//INTERPOLATION");
+
+                String sGrOutputFile = dir + "//SYNC//INTERPOLATION//INTERPOLATION" +"_" + Utilities.szVersion + ".CSV";
+                if(!File.Exists( sGrOutputFile))
+                {
+                    TextWriter sw= new StreamWriter(sGrOutputFile);
+                    sw.WriteLine("SUBJECTID,SHORTID,DATE,INTERPOLATEDTENTHSECS,TOTALTENTHSSECS");
+                    sw.Close();
+                }
+                 
+
+
+                classRoomDay.getTenthsFromUbi(dir, sGrOutputFile,false);
+               
+            }
+        }
+
         public void process(Boolean all,Boolean tenSecs)
         {
             makeDayReportLists();
@@ -1093,14 +1163,14 @@ namespace UL_Processor_V2023
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
                 //classRoomDay.setMappings(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV", personBaseMappings, mapById, startHour, endHour, endMinute);
-                classRoomDay.setMappings(dir, className, personBaseMappings, mapById, startHour, endHour, endMinute);
+                classRoomDay.setMappings(dir, mapPrefix, personBaseMappings, mapById, startHour, endHour, endMinute);
                 //if (className == "StarFish_2223")
                 //    classRoomDay.toFilter = true;
                 //ONSETS
                 String szOnsetOutputFile = dir + "//SYNC//ONSETS//DAYONSETS_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                 Dictionary<String, Tuple<String, DateTime>> lenaStartTimes = classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile, startHour, endHour, endMinute);//takes only mapping start-end
                 filesToMerge["ONSETS"].Add(szOnsetOutputFile);
-                 
+                 //
                 //GR
                 String sGrOutputFile = dir + "//SYNC//GR//DAYGR_TYPE_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                 classRoomDay.makeGofRFilesAndTimeDict(dir, sGrOutputFile, this.diagnosisList);

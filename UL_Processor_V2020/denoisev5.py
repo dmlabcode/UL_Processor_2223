@@ -91,7 +91,8 @@ def load_mapping_file(path: Path, remove_lab: bool = False) -> pd.DataFrame:
             
             subjectType="Child"
             
-            if 'TYPE' in df.columns:
+            if 'TYPE' in df.columns and row["TYPE"]!="":
+                logging.warning("HELLO TYPE0")
                 subjectType=row["TYPE"]
             elif "_T" in subject_id:
                 subjectType="Teacher"
@@ -115,7 +116,7 @@ def load_mapping_file(path: Path, remove_lab: bool = False) -> pd.DataFrame:
             logging.warning("SECOND BLOCK ")
             subjectType="Child"
              
-            if 'TYPE' in df.columns:
+            if 'TYPE' in df.columns and row["TYPE"]!="":
                 logging.warning("HELLO TYPE")
                 subjectType=row["TYPE"]
             elif "_T" in subject_id:
@@ -241,13 +242,14 @@ def pair_and_interpolate_motion_data(
             #logging.warning("t {} t_delta {} idx_l {} idx_r {}  ".format(t,t_delta,idx_l,idx_r))
             
              
-            sdata["Time"].append(t)
+            #sdata["Time"].append(t)
             #if abs((data_l["Time"][idx_l] - data_r["Time"][idx_r]).total_seconds()) > GAP_TOLERANCE and (abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE):
                 #logging.warning("REAL SECONDS>GAP {} {} {}  ".format(data_l["Time"][idx_l],data_r["Time"][idx_r],(data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()))
                 #time.sleep(20)
-            #corrected if abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE:
+            #fix bug/corrected if abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE:
             #original wrong if abs((data_l["Time"][idx_l] - data_r["Time"][idx_r]).total_seconds()) < GAP_TOLERANCE:
             if abs((data_l["Time"][idx_l] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE or abs((data_r["Time"][idx_r] - data_l["Time"][idx_l-1]).total_seconds()) < GAP_TOLERANCE or abs((data_l["Time"][idx_l] - data_r["Time"][idx_r-1]).total_seconds()) < GAP_TOLERANCE:
+                sdata["Time"].append(t)
                 w_l = (data_l["Time"][idx_l] - t) / (data_l["Time"][idx_l] - data_l["Time"][idx_l - 1])
                 w_r = (data_r["Time"][idx_r] - t) / (data_r["Time"][idx_r] - data_r["Time"][idx_r - 1])
                 sdata["lx"].append(data_l["X"][idx_l - 1] * (1 - w_l) + data_l["X"][idx_l] * w_l)
@@ -256,13 +258,13 @@ def pair_and_interpolate_motion_data(
                 sdata["rx"].append(data_r["X"][idx_r - 1] * (1 - w_r) + data_r["X"][idx_r] * w_r)
                 sdata["ry"].append(data_r["Y"][idx_r - 1] * (1 - w_r) + data_r["Y"][idx_r] * w_r)
                 sdata["rz"].append(data_r["Z"][idx_r - 1] * (1 - w_r) + data_r["Z"][idx_r] * w_r)
-            else:
-                sdata["lx"].append(np.nan)
-                sdata["ly"].append(np.nan)
-                sdata["lz"].append(np.nan)
-                sdata["rx"].append(np.nan)
-                sdata["ry"].append(np.nan)
-                sdata["rz"].append(np.nan)
+            #else:
+            #    sdata["lx"].append(np.nan)
+            #    sdata["ly"].append(np.nan)
+            #    sdata["lz"].append(np.nan)
+            #   sdata["rx"].append(np.nan)
+            #    sdata["ry"].append(np.nan)
+            #    sdata["rz"].append(np.nan)
 
             t += t_delta
             progress.update(1)

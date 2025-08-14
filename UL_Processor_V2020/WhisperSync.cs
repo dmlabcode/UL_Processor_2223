@@ -14,14 +14,79 @@ using System.Web.UI;
 
 namespace UL_Processor_V2023
 {
+    internal class subjectAudio
+    {
+        public DateTime lenaStart;
+        public DateTime sonyStart;
+
+
+    }
     internal class WhisperSync
     {
+        public void syncWhisperTone(Classroom cr)
+        {
+            foreach (DateTime day in cr.classRoomDays)
+            {
+                ClassroomDay classRoomDay = new ClassroomDay(day);
+                classRoomDay.setMappings(cr.dir, cr.mapPrefix, cr.personBaseMappings, cr.mapById, cr.startHour, cr.endHour, cr.endMinute);
 
+
+                Dictionary<String, String> subjectSonyMap = new Dictionary<String, String>();
+                String beepFile = cr.dir + "//TONEONSETS.csv";
+                if (File.Exists(beepFile))
+                {
+                    using (StreamReader sr = new StreamReader(beepFile))
+                    {
+                       if (!sr.EndOfStream)
+                       sr.ReadLine();
+
+                //classRoomDay.setMappings(cr.dir, cr.className, cr.personBaseMappings, cr.mapById, cr.startHour, cr.endHour, cr.endMinute); 
+                
+                TextWriter sw = new StreamWriter(cr.dir + "//BEEPSANDTIMESV2" + Utilities.getDateStrMMDDYY(day) + ".csv");
+
+                //Dictionary<String, subjectAudio> subjectAudioInfo = new Dictionary<string, subjectAudio>();
+                        while (!sr.EndOfStream)
+                        {
+                            String szLine = sr.ReadLine();
+                            String[] line = szLine.Split(',');
+                            //-----  	beepFile	frequency	file_name	flag_start_time	flag_end_time	length	previousSeconds	absolute_start_time	min_flag_candidate_req	max_gap_time
+                            //0 / mnt / hdd1 / IBSS / Debbie_School / StarFish / StarFish_2223 / 01 - 30 - 2023 / LENA_DATA / AUDIO  3000    20230201_014254_026848.wav  847.156 847.768 0.612   0   847.156 0.04    0.4
+
+                            if (line.Length > 5 && line[0].Contains(Utilities.getDateDashStr(day)) && line[5].Trim()!="")
+                            {
+                                //DateTime datetimeLena = Convert.ToDateTime(line[3].Trim());
+                                //DateTime datetimeSony = Convert.ToDateTime(line[5].Trim());
+                                //String subjectId = line[4].Trim();
+                                String mapSonyId = line[2].Trim();  
+                                PersonDayInfo pdi = classRoomDay.getPersonInfoBySony(mapSonyId);
+                                //subjectAudio subjectAudio = new subjectAudio();
+                                //subjectAudio.lenaStart = datetimeLena;
+                                //subjectAudio.sonyStart = datetimeSony;
+                                if (!subjectSonyMap.ContainsKey(pdi.mapId))
+                                {
+                                    //subjectAudioInfo.Add(pdi.mapId,subjectAudio);
+                                    subjectSonyMap.Add( pdi.mapId, line[5].Trim());
+                                }
+                            }
+                        }
+                    }
+
+                    getUbiInteractions(cr, classRoomDay, subjectSonyMap);
+
+                }
+
+                  
+
+
+            }
+
+
+        }
         public void syncWhisper2223(Classroom cr)
         {
             foreach (DateTime day in cr.classRoomDays)
             {
-                TextWriter sw = new StreamWriter(cr.dir + "//BEEPSANDTIMES" + Utilities.getDateStrMMDDYY(day) + ".csv");
+                TextWriter sw = new StreamWriter(cr.dir + "//BEEPSANDTIMESV2" + Utilities.getDateStrMMDDYY(day) + ".csv");
 
                 double minLenaOnset = -1;
                 String minLenaOnsetFile = "";
@@ -31,7 +96,7 @@ namespace UL_Processor_V2023
                 ClassroomDay classRoomDay = new ClassroomDay(day);
                 classRoomDay.setMappings(cr.dir, cr.className, cr.personBaseMappings, cr.mapById, cr.startHour, cr.endHour, cr.endMinute);
 
-                String beepFile = cr.dir + "//BEEPS.csv";
+                String beepFile = cr.dir + "//SF2223BEEPS.csv";
                 if (File.Exists(beepFile))
                 {
                     getMinOnset(beepFile, cr, classRoomDay, day, ref minLenaOnset, ref minLenaOnsetFile, ref minLenaStartTime, ref newBeepLines, ref sw);
@@ -47,18 +112,24 @@ namespace UL_Processor_V2023
         
 
         }
+
         public void getUbiInteractions(Classroom cr, ClassroomDay classRoomDay, Dictionary<String, String> subjectSonyMap)
         {
             classRoomDay.makeTimeDict(cr.dir);
             if (Directory.Exists(cr.dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//Whisper_Data"))
             {
+                if (!Directory.Exists(cr.dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//WhisperV2_Ubi_Data"))
+                {
+                    Directory.CreateDirectory(cr.dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//WhisperV2_Ubi_Data");
+                }
+
                 foreach (String file in Directory.GetFiles(cr.dir + "//" + Utilities.getDateDashStr(classRoomDay.classDay) + "//Whisper_Data"))
                 {
-                    TextWriter sw = new StreamWriter(file.Replace(".",  "CONTACT.").Replace("//Whisper_Data",""));
                     
                     String mapSonyId = file.Substring(file.IndexOf("\\") + 2, 2);
                     PersonDayInfo pdi = classRoomDay.getPersonInfoBySony(mapSonyId);
-                    if(subjectSonyMap.ContainsKey(pdi.mapId))
+                    TextWriter sw = new StreamWriter(file.Replace("AST", pdi.mapId).Replace("//Whisper_Data", "//WhisperV2_Ubi_Data"));
+                    if (subjectSonyMap.ContainsKey(pdi.mapId))
                     {
                         DateTime subjectSonyStartTime = Utilities.getDate(subjectSonyMap[pdi.mapId]) ;
                         subjectSonyStartTime = new DateTime(classRoomDay.classDay.Year, classRoomDay.classDay.Month, classRoomDay.classDay.Day, subjectSonyStartTime.Hour, subjectSonyStartTime.Minute, subjectSonyStartTime.Second, subjectSonyStartTime.Millisecond);
@@ -66,9 +137,14 @@ namespace UL_Processor_V2023
                         using (StreamReader sr = new StreamReader(file))
                         {
                             if (!sr.EndOfStream)
-                                 sw.WriteLine(sr.ReadLine()+",KIDSOCIALCONTACT,ADULTSOCIALCONTACT,TEACHERSOCIALCONTACT"); 
+                            {
+                                sw.Write(sr.ReadLine() + ",KIDSOCIALCONTACT,ADULTSOCIALCONTACT,TEACHERSOCIALCONTACT,STARTTIMESTAMP,ENDTIMESTAMP,");
+                                foreach(String s in cr.personBaseMappings.Keys)
+                                    sw.Write(s + ",");
+                                
+                                sw.WriteLine("");
 
-
+                            }
 
                             /*
                              * 	start_sec	end_sec	lang	language_t3	probability_t3	sentence
@@ -92,6 +168,9 @@ namespace UL_Processor_V2023
                                     Boolean inSocialContactWithKid = false;
                                     Boolean inSocialContactWithAdult = false;
                                     Boolean inSocialContactWithTeacher = false;
+
+                                    List<String> inSocialContact = new List<string>();
+
                                     while (t<endTime)
                                     {
                                         if(classRoomDay.ubiTenths.ContainsKey(t) && classRoomDay.ubiTenths[t].ContainsKey(pdi.mapId))
@@ -111,9 +190,15 @@ namespace UL_Processor_V2023
                                                     {
                                                         if (orientedCloseness)
                                                         {
+                                                            if (!inSocialContact.Contains(subject))
+                                                            {
+                                                                inSocialContact.Add(subject);
+                                                            }
+                                                            
                                                             if (cr.personBaseMappings[subject].subjectType == "CHILD")
                                                             {
                                                                 inSocialContactWithKid = true;
+                                                                 
                                                             }
                                                             else
                                                             {
@@ -121,14 +206,15 @@ namespace UL_Processor_V2023
                                                                 if (cr.personBaseMappings[subject].subjectType == "TEACHER")
                                                                 {
                                                                     inSocialContactWithTeacher = true;
+                                                                     
                                                                 }
                                                             }
 
                                                         }
                                                     }
-                                                    if (inSocialContactWithKid && inSocialContactWithAdult && inSocialContactWithTeacher)
+                                                   // if (inSocialContactWithKid && inSocialContactWithAdult && inSocialContactWithTeacher)
                                                     {
-                                                        break;
+                                                     //   break;
                                                     }
                                                 }
                                                  
@@ -144,8 +230,23 @@ namespace UL_Processor_V2023
                                         }
 
                                     }
-                                    sw.WriteLine(szLine + "," + inSocialContactWithKid + "," + inSocialContactWithAdult + "," + inSocialContactWithTeacher);
-                                    
+                                    sw.Write(szLine + "," + inSocialContactWithKid + "," + inSocialContactWithAdult + "," + inSocialContactWithTeacher+","+
+                                        startTime.Hour+":"+startTime.Minute+":"+startTime.Second+"."+startTime.Millisecond + "," +
+                                        endTime.Hour + ":" + endTime.Minute + ":" + endTime.Second + "." + endTime.Millisecond+",");
+
+                                    foreach (String s in cr.personBaseMappings.Keys)
+                                    {
+                                        if(s!= pdi.mapId  && classRoomDay.personBaseMappings.ContainsKey(s) &&   classRoomDay.personDayMappings.ContainsKey(s) && classRoomDay.personDayMappings[s].present)
+                                        {
+                                            sw.Write((inSocialContact.Contains(s) ? "TRUE" : "FALSE") + ",");
+                                        }
+                                        else
+                                        {
+                                            sw.Write("NA,");
+                                        }
+                                    }
+
+                                    sw.WriteLine("");
                                 }
                             }
                         }
@@ -228,13 +329,17 @@ namespace UL_Processor_V2023
                     {
                         double onsetSecs = Convert.ToDouble(line[8]);
                         String audioType = line[3].Trim().Length > 11 ? "LENA" : "SONY";
-                        if (audioType == "LENA")
+                        if (audioType == "LENA"  && File.Exists(cr.dir + "//" + Utilities.getDateDashStr(day) + "//LENA_Data//ITS//" + line[3].Trim().Replace(".wav", ".its")))
                         {
                             if (minLenaOnset == -1 || minLenaOnset > onsetSecs)
                             {
                                 minLenaOnset = onsetSecs;
                                 minLenaOnsetFile = line[3].Trim();
                             }
+                        }
+                        if(audioType=="SONY")
+                        {
+                            bool stopHere = true;
                         }
                         String szSonyId = audioType == "SONY" ? line[3].Replace(".wav", "") : "";
                         String mapSonyId = audioType == "SONY" ? szSonyId.Substring(1, 2) : "";

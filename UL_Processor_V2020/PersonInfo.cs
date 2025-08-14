@@ -12,10 +12,14 @@ namespace UL_Processor_V2023
     public class PersonInfo
     {
         public String mapId = "";
+        public String shortId = "";
+        public String longId = "";
+
         public DateTime time;
         public double x = 0;
         public double y = 0;
         public double z = 0; 
+        public Boolean interpolated=false;
     }
     public class PersonSuperInfo: PersonInfo
     {

@@ -245,38 +245,38 @@ namespace UL_Processor_V2023
         }
         public static String getDayMappingFileName(String dir, DateTime day, String className)
         {
-            String mappingDayFileName = dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//MAPPING_" + className + ".CSV";
-            if (!File.Exists(mappingDayFileName))
+            String mappingDayDir = dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//";
+            String mappingDayFileNameNoPathBase = "MAPPING_" + className + ".CSV";
+            String mappingDayFileNameNoPath = mappingDayFileNameNoPathBase;
+
+            if (!File.Exists(mappingDayDir+ mappingDayFileNameNoPath))
             {
-                mappingDayFileName = mappingDayFileName.Substring(mappingDayFileName.LastIndexOf("//") + 2);
-                mappingDayFileName = mappingDayFileName.Replace("OUTSIDE", "").Replace("BASE", "");
-                mappingDayFileName = mappingDayFileName.Substring(0, mappingDayFileName.IndexOf(".")) + "_"+ Utilities.getDateStr(day, "", 0) + ".csv";
-                
-                
-                if (!File.Exists(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//" + mappingDayFileName))
+                mappingDayFileNameNoPath = mappingDayFileNameNoPathBase.Replace("OUTSIDE", "").Replace("BASE", "");
+                mappingDayFileNameNoPath = mappingDayFileNameNoPath.Substring(0, mappingDayFileNameNoPath.IndexOf(".")) + "_"+ Utilities.getDateStr(day, "", 0) + ".csv";
+
+
+                if (!File.Exists(mappingDayDir + mappingDayFileNameNoPath))
                 {
-                    mappingDayFileName = (mappingDayFileName.IndexOf("_2") > 0 ? mappingDayFileName.Substring(0, mappingDayFileName.IndexOf("_2") + 1) : mappingDayFileName.Substring(0, mappingDayFileName.IndexOf(".")) + "_") + Utilities.getDateStr(day, "", 0) + ".csv";
-                    if (!File.Exists(dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//" + mappingDayFileName))
+
+                    mappingDayFileNameNoPath = mappingDayFileNameNoPathBase.Substring(0, mappingDayFileNameNoPathBase.IndexOf(".")) + "_" + Utilities.getDateStrMMDDYY(day, "_") + ".csv";
+
+                    if (!File.Exists(mappingDayDir + mappingDayFileNameNoPath))
                     {
-                        String mapDate = mappingDayFileName.Substring(mappingDayFileName.LastIndexOf("_") + 1).Replace(".csv", "").Replace(".CSV", "");
-                        if (mapDate.Length == 8)
+
+                        mappingDayFileNameNoPath = mappingDayFileNameNoPathBase.Substring(0, mappingDayFileNameNoPathBase.IndexOf(".")) + "_" + Utilities.getDateStr(day, "", 0) + ".csv";
+                        if (!File.Exists(mappingDayDir + mappingDayFileNameNoPath))
                         {
-                            mappingDayFileName = mappingDayFileName.Replace(mapDate, mapDate.Substring(0, 4) + mapDate.Substring(6, 2));
+                            mappingDayFileNameNoPath = mappingDayFileNameNoPathBase.Substring(0, mappingDayFileNameNoPathBase.IndexOf(".")) + "_" + Utilities.getDateStrMMDDYY(day, "") + ".csv";
+
                         }
-
-
                     }
+
                 }
-
-                mappingDayFileName = dir + "//" + Utilities.getDateDashStr(day) + "//MAPPINGS//"+ mappingDayFileName;
-
-
-
 
             }
 
 
-           return mappingDayFileName;
+           return mappingDayDir+ mappingDayFileNameNoPath;
         }
 
         /********************/////////////// DATE STUFF ////////////////********************
@@ -310,9 +310,13 @@ namespace UL_Processor_V2023
         }
         public static String getDateStrMMDDYY(DateTime d)
         {
-            return (d.Month <= 9 ? "0" + d.Month : d.Month.ToString()) +  
-                (d.Day <= 9 ? "0" + d.Day : d.Day.ToString()) + 
-                d.Year.ToString().Substring(2,2);
+            return getDateStrMMDDYY( d,"");
+        }
+        public static String getDateStrMMDDYY(DateTime d, String sep)
+        {
+            return (d.Month <= 9 ? "0" + d.Month : d.Month.ToString()) +sep+
+                (d.Day <= 9 ? "0" + d.Day : d.Day.ToString()) +sep+
+                d.Year.ToString().Substring(2, 2);
         }
         public static String getTimeStr(DateTime t)
         {
