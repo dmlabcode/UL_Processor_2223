@@ -18,5 +18,14 @@ namespace UL_Processor_V2023
         public int totalSegments = 0;
         public double avgDb = 0;
         public double maxDb = 0;
+
+        //for alice
+        public double totalKchiDur = 0;
+        public double totalKchiCount = 0;
+
+        public double totalKchiDurWLENA = 0;
+        public double totalKchiCountWLENA = 0;
+
+
     }
 }

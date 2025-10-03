@@ -20,15 +20,56 @@ namespace UL_Processor_V2023
         static String szVersion = "";
         static void Main(string[] arguments)
         {
-            String processType = "COMPAREALICE";//"WHISPERTONE","WHISPER";// "INTERPOLATION";// "UL";// "WHISPER";// "UL";
-            String szClassroomSettings = " MAP_PREFIX:ROOM8 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";// YES"; 
-
+            String processType = "UA";//"COMPAREALICE" "WHISPERTONE","WHISPER";// "INTERPOLATION";// "UL";// "WHISPER";// "UL";
+            String szClassroomSettings = " MAP_PREFIX:StarFish_1920 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";// YES"; 
 
             String[] szClassroomsToProcess = {
-                "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Room8 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
-       "10/14/2024,11/18/2024,01/13/2025,02/10/2025,03/17/2025,04/07/2025"+//"10/14/2024,11/18/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025"+
+                "DIR:H://IBSS// CLASSNAME:StarFish_1920 GRMIN:0.25 GRMAX:2.5 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+       "10/02/2019,11/26/2019,12/02/2019,01/28/2020,02/24/2020"+//"10/14/2024,11/18/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025"+
        szClassroomSettings};
 
+
+
+
+            /*
+             * 
+             * 
+             * 
+String szClassroomSettings = " MAP_PREFIX:PRIDE_LEAP_AM REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";// YES"; 
+
+            String[] szClassroomsToProcess = {
+                "DIR:H://IBSS// CLASSNAME:LEAP_AM_1819 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:10 MINMAX:50 DAYS:" +
+       "01/23/2019,02/20/2019,03/20/2019,04/16/2019,05/30/2019"+//"10/14/2024,11/18/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025"+
+       szClassroomSettings};
+            
+            String szClassroomSettings = " MAP_PREFIX:LADYBUGS REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";// YES"; 
+
+            String[] szClassroomsToProcess = {
+                "DIR:H://IBSS// CLASSNAME:LB1718 GRMIN:0 GRMAX:1.5 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+       "10/24/2017,11/03/2017,11/17/2017,12/14/2017,01/11/2018,02/02/2018,02/16/2018,03/13/2018,03/20/2018,05/01/2018,05/16/2018"+//"10/14/2024,11/18/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025"+
+       szClassroomSettings};
+
+String szClassroomSettings = " MAP_PREFIX:LB17 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";// YES"; 
+
+            String[] szClassroomsToProcess = {
+                "DIR:H://IBSS// CLASSNAME:LB17 GRMIN:0 GRMAX:1.5 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+       "03/03/2017,03/10/2017,03/17/2017,03/31/2017,04/07/2017,04/21/2017,04/28/2017,05/12/2017,05/19/2017,05/26/2017"+
+       szClassroomSettings};//????03/24/2017,5/5
+
+String szClassroomSettings = " MAP_PREFIX:LADYBUGS_1819 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";// YES"; 
+
+           String[] szClassroomsToProcess = {
+                "DIR:C://IBSS// CLASSNAME:LadyBugs_1819 GRMIN:0.25 GRMAX:1.5 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+       "10/03/2018,10/08/2018,11/28/2018,12/04/2018,01/08/2019,01/15/2019,02/05/2019,03/06/2019,03/15/2019,04/02/2019,05/07/2019,05/14/2019,05/24/2019"+
+       szClassroomSettings};
+
+            String szClassroomSettings = " MAP_PREFIX:LADYBUGS REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";// YES"; 
+
+String[] szClassroomsToProcess = {
+                "DIR:C://IBSS// CLASSNAME:LB1718 GRMIN:0 GRMAX:1.5 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+       "10/24/2017,11/03/2017,11/17/2017,12/14/2017,01/11/2018,02/02/2018,02/16/2018,03/13/2018,03/20/2018,05/01/2018"+//"10/14/2024,11/18/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025"+
+       szClassroomSettings};
+            */
             /* String[] szClassroomsToProcess = {
         "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Bubbles_2425 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
        "10/28/2024,11/06/2024,01/22/2025,02/28/2025,03/03/2025,04/16/2025,05/05/2025"+
@@ -166,6 +207,10 @@ String[] szClassroomsToProcess = {
             if (processType=="UL")
             {
                 processUL(szClassroomsToProcess);
+            }
+            else if (processType == "UA")
+            {
+                processUA(szClassroomsToProcess);
             }
             else if(processType=="WHISPER")
             {
@@ -360,7 +405,103 @@ String[] szClassroomsToProcess = {
             Console.ReadLine();
         }
     
-    static void processUL(string[] szClassroomsToProcess)
+    static void processUA(string[] szClassroomsToProcess)
+        {
+            /******** A)FOR EACH CLASSROOM:********/
+            foreach (String szClassroomArgs in szClassroomsToProcess)
+            {
+                 
+                /*1- Create Classroom Object, read and set Parameters*/
+                Classroom classRoom = new Classroom();
+                 
+                String[] args = szClassroomArgs.Split(' ');
+                 
+                foreach (String arg in args) 
+                {
+                    String[] setting = arg.Split(':');
+                     
+                    if (setting.Length > 1)
+                    {
+                        switch (setting[0].Trim())
+                        {
+                            case "DIR":
+                                classRoom.dir = setting[1].Trim() + ":" + setting[2].Trim();
+                                break;
+                            case "ANGLE":
+                                classRoom.angle = Convert.ToDouble(setting[1].Trim());
+                                break;
+                            case "CLASSNAME":
+                                classRoom.className = setting[1].Trim();
+                                break;
+                            case "FOLDER":
+                                classRoom.classFolder = setting[1].Trim();
+                                break;
+                            case "MAP_PREFIX":
+                                classRoom.mapPrefix = setting[1].Trim();
+                                break;
+                            case "GRMIN":
+                                classRoom.grMin = Convert.ToDouble(setting[1].Trim());
+                                break;
+                            case "GRMAX":
+                                classRoom.grMax = Convert.ToDouble(setting[1].Trim());
+                                break;
+                            case "HRMIN":
+                                classRoom.startHour = Convert.ToInt16(setting[1].Trim());
+                                break;
+                            case "HRMAX":
+                                classRoom.endHour = Convert.ToInt16(setting[1].Trim());
+                                break;
+                            case "MINMAX":
+                                classRoom.endMinute = Convert.ToInt16(setting[1].Trim());
+                                break;
+                            case "DAYS":
+                                foreach (String szDate in setting[1].Trim().Split(','))
+                                {
+                                    classRoom.classRoomDays.Add(Utilities.getDate(szDate));
+                                }
+                                break;
+                            
+                        }
+                    }
+                }
+
+                /*2- Set Version Name extension for file naming: GR+minGrwith_insteadOfDots+maxGrwith_insteadOfDots+TodaysMMDDYY+RANDOMNUMBER
+                         Set Classroom Object mapId to link mapping files and data
+                         Create directories for distinct reports*/
+ 
+                if (Utilities.szVersion.Trim() == "")
+                    Utilities.setVersion(classRoom.grMin, classRoom.grMax);//run day and GR version for file naming
+
+                classRoom.mapById = "LONGID";
+                classRoom.setDirs();
+
+
+                /*3- Set Classroom’s Base Mappings */
+                classRoom.setBaseMappings();
+                if (!Directory.Exists(classRoom.dir + "//SYNC//ALICE_PAIRACTIVITY"))
+                Directory.CreateDirectory(classRoom.dir + "//SYNC//ALICE_PAIRACTIVITY");
+                classRoom.filesToMerge.Add("ALICE_PAIRACTIVITIES", new List<string>());
+                if (!Directory.Exists(classRoom.dir + "//SYNC//GR"))
+                    Directory.CreateDirectory(classRoom.dir + "//SYNC//GR");
+                /*4 Clean ubi */
+                classRoom.cleanUbiFiles();
+
+                classRoom.processAlice();
+
+               classRoom.mergeDayFiles();
+
+
+
+                //Utilities.szVersion = "10_26_2020_478216537";// "10_21_2020_2098687227";// "10_20_2020_419130690";// "10_20_2020_986296434";// "10_19_2020_1345568271";//10_19_2020_1345568271  10_19_2020_1700354507
+                classRoom.getPairActLeadsFromDir("ALICE_PAIRACTIVITY", "ALICE_PAIRACTIVITY");
+                //classRoom.getPairActLeadsFromFiles();
+            }
+
+            Console.ReadLine();
+        }
+
+
+        static void processUL(string[] szClassroomsToProcess)
         {
             /******** A)FOR EACH CLASSROOM:********/
             foreach (String szClassroomArgs in szClassroomsToProcess)
@@ -372,15 +513,15 @@ String[] szClassroomsToProcess = {
 
                 classRoom.ubiCleanup = true;// true;//  true;// true;// false;// true;// false;
                 classRoom.reDenoise = false;//true;// false;// true;// false;
-              
+
                 String[] args = szClassroomArgs.Split(' ');
 
                 String szCustom = "1";
-                
-                foreach (String arg in args) 
+
+                foreach (String arg in args)
                 {
                     String[] setting = arg.Split(':');
-                     
+
                     if (setting.Length > 1)
                     {
                         switch (setting[0].Trim())
@@ -458,7 +599,7 @@ String[] szClassroomsToProcess = {
                                     classRoom.classRoomDays.Add(Utilities.getDate(szDate));
                                 }
                                 break;
-                            
+
                         }
                     }
                 }
@@ -466,7 +607,7 @@ String[] szClassroomsToProcess = {
                 /*2- Set Version Name extension for file naming: GR+minGrwith_insteadOfDots+maxGrwith_insteadOfDots+TodaysMMDDYY+RANDOMNUMBER
                          Set Classroom Object mapId to link mapping files and data
                          Create directories for distinct reports*/
- 
+
                 if (Utilities.szVersion.Trim() == "")
                     Utilities.setVersion(classRoom.grMin, classRoom.grMax);//run day and GR version for file naming
 
@@ -482,9 +623,9 @@ String[] szClassroomsToProcess = {
                 //Utilities.resetDiagnosisAndLanguages(classRoom, "SYNC");// "Synched_Data_GR0_22_DEN_MAXZ1_25");
 
 
-                if (!classRoom.justPLS && szCustom=="1")
+                if (!classRoom.justPLS && szCustom == "1")
                 {
-                
+
                     classRoom.createReportDirs();
                     /*4 Clean ubi */
                     classRoom.ubiCleanup = classRoom.reDenoise ? true : classRoom.ubiCleanup;
@@ -495,20 +636,20 @@ String[] szClassroomsToProcess = {
                     //DELETE DEBUG 
                     //classRoom.kalman = false;
                     if (classRoom.kalman)
-                    classRoom.denoise();
+                        classRoom.denoise();
 
                     /* 5 Process */
                     //classRoom.processUbi(true);//DELETE DEBUG
                     if (toProcess)
                     {
-                        if(classRoom.kalman)
+                        if (classRoom.kalman)
                             classRoom.process(true, true);
                         else
                             classRoom.processUbi(true);
                     }
-                         
 
- 
+
+
 
                     classRoom.mergeDayFiles();
 
@@ -522,7 +663,7 @@ String[] szClassroomsToProcess = {
 
                     classRoom.processPLSs();
                 }
-                else if(szCustom=="3")
+                else if (szCustom == "3")
                 {
                     classRoom.processOutsideLenas();
                 }
@@ -531,6 +672,8 @@ String[] szClassroomsToProcess = {
 
             Console.ReadLine();
         }
+
+
     }
 }
 

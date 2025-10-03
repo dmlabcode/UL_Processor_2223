@@ -48,11 +48,16 @@ namespace UL_Processor_V2023
 
         public void getPairActLeadsFromFiles()
         {
-            getPairActLeadsFromFiles("SYNC");
+            getPairActLeadsFromFiles("SYNC", "PAIRACTIVITY", "PAIRACTIVITY");
         }
-        public void getPairActLeadsFromFiles(String syncFolder)
+        public void getPairActLeadsFromDir(String subFolder, String filePrefix)
+        {
+            getPairActLeadsFromFiles("SYNC", subFolder, filePrefix);
+        }
+        public void getPairActLeadsFromFiles(String syncFolder, String subFolder, String filePrefix)
         {
             String reportClassYear = className;
+            String fileFolder = subFolder != "" ? subFolder : "PAIRACTIVITY";
             String classYear = "";
             try
             {
@@ -76,7 +81,7 @@ namespace UL_Processor_V2023
                 reportClassYear = reportClassYear + classYear;
             }
              
-            TextWriter sw = new StreamWriter(dir + "//"+syncFolder+"//PAIRACTIVITY//PAIRACTIVITY_" + reportClassYear+"_"+ Utilities.szVersion + "ALL.CSV");
+            TextWriter sw = new StreamWriter(dir + "//"+syncFolder+"//"+ fileFolder+"//"+ filePrefix + "_" + reportClassYear+"_"+ Utilities.szVersion + "ALL.CSV");
             int numOfDays = classRoomDays.Count;
             Dictionary<String, String> prevPairLines = new Dictionary<string, string>();
             Dictionary<String, String> pairLines = new Dictionary<string, string>();
@@ -84,14 +89,14 @@ namespace UL_Processor_V2023
             foreach (DateTime dayDate in classRoomDays)
             {
                 pairLines = new Dictionary<string, string>();
-                String[] szFiles = Directory.GetFiles(dir + "//"+syncFolder+"//PAIRACTIVITY//");
+                String[] szFiles = Directory.GetFiles(dir + "//"+syncFolder+"//"+ fileFolder+"//");
                 String fileDayPart = Utilities.getDateStr(dayDate, "", 2);
                 String headerLine = "";
 
                 foreach (String szFile in szFiles)
                 {
-
-                    if (szFile.Contains(fileDayPart) && szFile.Contains(Utilities.szVersion + "."))
+                    String szFileName= szFile.Substring(szFile.LastIndexOf("/")+1);
+                    if (szFileName.Contains(fileDayPart) && szFileName.Contains(filePrefix) && szFileName.Contains(Utilities.szVersion + "."))
                     {
                         using (StreamReader sr = new StreamReader(szFile))
                         {
@@ -155,7 +160,7 @@ namespace UL_Processor_V2023
 
         public void setBaseMappings()
         {
-            String mappingBaseFileName = dir + "//MAPPING_" + className + "_BASE.CSV";
+            String mappingBaseFileName = dir + "//MAPPING_" + (mapPrefix!=""?mapPrefix: className) + "_BASE.CSV";
             List<int> dList = new List<int>();
             List<int> lList = new List<int>();
             Dictionary<String, int> columnIndexBase = new Dictionary<string, int>();
@@ -1149,7 +1154,36 @@ namespace UL_Processor_V2023
                
             }
         }
+        public void processAlice()
+        {
 
+            /*4.1 For each Collection Day process daily files*/
+            foreach (DateTime day in classRoomDays)
+            {
+                ClassroomDay classRoomDay = new ClassroomDay(day);
+                classRoomDay.setMappings(dir, mapPrefix, personBaseMappings, mapById, startHour, endHour, endMinute);
+                 
+                
+                String szOnsetOutputFile = dir + "//SYNC//DAYONSETS_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                Dictionary<String, Tuple<String, DateTime>> lenaStartTimes = classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile, startHour, endHour, endMinute);//takes only mapping start-end
+                //classRoomDay.lenaOnsets = new Dictionary<string, List<LenaOnset>>();
+                classRoomDay.readAliceAndGetOnsets(dir, startHour, endHour, endMinute, lenaStartTimes);
+                //GR
+                String sGrOutputFile = dir + "//SYNC//GR//DAYGR_TYPE_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                //classRoomDay.makeGofRFilesAndTimeDict(dir, sGrOutputFile, this.diagnosisList, false);
+                classRoomDay.getTenthsFromUbi(dir, sGrOutputFile);
+
+                classRoomDay.setTenthOfSecLENA();// ALICE();
+
+                Dictionary<String, Pair> pairs = classRoomDay.countInteractions(lenaStartTimes,this.grMin, this.grMax, this.angle, "", ""); //; //count interactions but no need to write a file
+
+                //*PAIRACTIVITY REPORT*/
+                String szPairActOutputFile = dir + "//SYNC//ALICE_PAIRACTIVITY//ALICE_PAIRACTIVITY_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                classRoomDay.writePairActivityData(pairs, className, szPairActOutputFile, this.diagnosisList, this.languagesList);
+                filesToMerge["ALICE_PAIRACTIVITIES"].Add(szPairActOutputFile);
+
+            }
+        }
         public void process(Boolean all,Boolean tenSecs)
         {
             makeDayReportLists();

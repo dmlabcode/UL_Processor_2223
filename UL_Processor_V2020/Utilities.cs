@@ -394,12 +394,19 @@ namespace UL_Processor_V2023
         public static String getLenaIdFromFileName(String szItsFileName)
         {
             String lenaId = szItsFileName;// file.Substring(file.IndexOf("\\") + 1);
-            lenaId = lenaId.Substring( 16 , 6);
+            
+            /*BEFORE 2025 FALL CHECK IOF YYYY>2018 WORKS lenaId = lenaId.Substring( 16 , 6);
             if (lenaId.Substring(0, 2) == "00")
                 lenaId = lenaId.Substring(2);
             else if (lenaId.Substring(0, 1) == "0")
-                lenaId = lenaId.Substring(1);
+                lenaId = lenaId.Substring(1);*/
 
+            //if(lenaId.Contains("_"))
+            {
+                lenaId = lenaId.Substring(szItsFileName.LastIndexOf("_") + 2).Replace(".its", "");
+                if (szItsFileName.Substring(0, 1) == "0")
+                    szItsFileName = szItsFileName.Substring(1);
+            }
             return lenaId;
         }
          

@@ -15,6 +15,7 @@ namespace UL_Processor_V2020
         public double speech = 0;
 
         public double kchiDur = 0;
+        public double kchiCount = 0;
         public double chiDur = 0;
         public double femDur = 0;
         public double malDur = 0;

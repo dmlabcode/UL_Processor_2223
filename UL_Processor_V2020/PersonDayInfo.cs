@@ -26,6 +26,7 @@ namespace UL_Processor_V2023
         public AliceVars WUBIAliceVars = new AliceVars();
 
         public Dictionary<String, LenaVars> totalLenaVarsAct = new Dictionary<string, LenaVars>();
+        public DateTime maxTime = new DateTime(1999,1,1);
        // public Dictionary<String, LenaVars> WUBILenaVarsAct = new Dictionary<string, LenaVars>();
 
 
