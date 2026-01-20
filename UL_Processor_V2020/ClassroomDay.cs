@@ -110,11 +110,11 @@ namespace UL_Processor_V2023
             szHeader += "PairBlockTalking,PairTalkingDuration," +
 //taken out Subject-Talking-Duration-From_Start,"+Partner-Talking-Duration-From-Start,
 "Subject-Talking-Duration-Evenly-Spread,Partner-Talking-Duration-Evenly-Spread," +
-"A_Subject-Talking-Duration-Evenly-Spread,A_Partner-Talking-Duration-Evenly-Spread," +
-"AL_Subject-Talking-Duration-Evenly-Spread,AL_Partner-Talking-Duration-Evenly-Spread," +
-"SubjectTurnCount,PartnerTurnCount,SubjectVocCount,PartnerVocCount," +
-"A_SubjectVocCount,A_PartnerVocCount,"+
-"AL_SubjectVocCount,AL_PartnerVocCount,"+
+"VTC_Subject-Talking-Duration-Evenly-Spread,VTC_Partner-Talking-Duration-Evenly-Spread," +
+"LENAVTC_Subject-Talking-Duration-Evenly-Spread,LENAVTC_Partner-Talking-Duration-Evenly-Spread," +
+"SubjectTurnCount,PartnerTurnCount,LENA_SubjectVocCount,LENVTC_PartnerVocCount," +
+"VTC_SubjectVocCount,VTC_PartnerVocCount,"+
+"LENAVTC_SubjectVocCount,LENAVTC_PartnerVocCount,"+
 "SubjectAdultCount,PartnerAdultCount,SubjectNoise," +
 "PartnerNoise,SubjectOLN,PartnerOLN,SubjectCry,PartnerCry,SubjectJoinedCry,PartnerJoinedCry,JoinedCry,";
              
@@ -122,11 +122,11 @@ namespace UL_Processor_V2023
             szHeader += "PairProximityDuration," +
 "PairOrientation-ProximityDuration,SharedTimeinClassroom,SubjectTime,PartnerTime,TotalRecordingTime,"+
 "WUBITotalVD,TotalVD,PartnerWUBITotalVD,PartnerTotalVD,"+
-"A_WUBITotalVD,A_TotalVD,A_PartnerWUBITotalVD,A_PartnerTotalVD," +
-"AL_WUBITotalVD,AL_TotalVD,AL_PartnerWUBITotalVD,AL_PartnerTotalVD," +
+"VTC_WUBITotalVD,VTC_TotalVD,VTC_PartnerWUBITotalVD,VTC_PartnerTotalVD," +
+"LENAVTC_WUBITotalVD,LENAVTC_TotalVD,LENAVTC_PartnerWUBITotalVD,LENAVTC_PartnerTotalVD," +
 "WUBITotalVC,TotalVC,PartnerWUBITotalVC,PartnerTotalVC," +
-"A_WUBITotalVC,AL_TotalVC,A_PartnerWUBITotalVC,A_PartnerTotalVC," +
-"AL_WUBITotalVC,AL_TotalVC,AL_PartnerWUBITotalVC,AL_PartnerTotalVC," +
+"VTC_WUBITotalVC,LENAVTC_TotalVC,VTC_PartnerWUBITotalVC,VTC_PartnerTotalVC," +
+"LENAVTC_WUBITotalVC,LENAVTC_TotalVC,LENAVTC_PartnerWUBITotalVC,LENAVTC_PartnerTotalVC," +
 "WUBITotalTC,TotalTC,PartnerWUBITotalTC," +
 "PartnerTotalTC,WUBITotalAC,TotalAC,PartnerWUBITotalAC,PartnerTotalAC,WUBITotalNO,TotalNO,PartnerWUBITotalNO,PartnerTotalNO,"+
 "WUBITotalOLN,TotalOLN,PartnerWUBITotalOLN,PartnerTotalOLN,WUBITotalCRY,TotalCRY,PartnerWUBITotalCRY,PartnerTotalCRY,"+
@@ -145,7 +145,7 @@ namespace UL_Processor_V2023
             }
 
             newDiagnosis= newDiagnosis=="SubjectDiagnosis,PartnerDiagnosis,SubjectLanguage,PartnerLanguage,"? "SubjectDiagnosis,PartnerDiagnosis," : newDiagnosis;
-            newLanguages = newLanguages == "" ? "SubjectLanguage,PartnerLanguage," : newLanguages;
+            newLanguages = newLanguages == "" ? "" : newLanguages;// newLanguages == "" ? "SubjectLanguage,PartnerLanguage," : newLanguages;
             szHeader=szHeader.Replace("SubjectDiagnosis,PartnerDiagnosis,", newDiagnosis);
             szHeader=szHeader.Replace("SubjectLanguage,PartnerLanguage,", newLanguages);
 
@@ -1577,6 +1577,7 @@ namespace UL_Processor_V2023
                                             String szStart = startHour.ToString() + ":00";
                                             String szEnd = endHour.ToString()+":"+endMinute.ToString();
                                             tempCommaLineArr[columnIndex["START"]] = szStart;
+                                            if(tempCommaLineArr[columnIndex["END"]]=="")
                                             tempCommaLineArr[columnIndex["END"]] = szEnd;
 
 
@@ -1935,44 +1936,55 @@ namespace UL_Processor_V2023
                                 UbiLocation ubiLoc = new UbiLocation();
                                 ubiLoc.tag = lineCols[1];
                                 DateTime lineTime = Convert.ToDateTime(lineCols[2]);
-                                findTagPerson(ref ubiLoc, lineTime);
-                                String subject = ubiLoc.id;
 
-                                ubiLoc.time = lineTime;
-                                ubiLoc.x = Convert.ToDouble(lineCols[3]);
-                                ubiLoc.y = Convert.ToDouble(lineCols[4]);
-                                if (ubiLoc.type == "L")
+                                Boolean datePassHackTurtles = true;
+                                if (this.classDay.Month == 1 &&
+                                            this.classDay.Day == 24 &&
+                                            this.classDay.Year == 2020)
                                 {
-                                    if (!ubiLefts.ContainsKey(subject))
-                                        ubiLefts.Add(subject, new List<UbiLocation>());
-                                    ubiLefts[subject].Add(ubiLoc);
-                                    /***********************T1HACK**************************************/
-                                    if (ubiLoc.tag == "00:11:CE:00:00:00:02:CE" &&
-                                        lineTime >= new DateTime(2019, 02, 12, 10, 28, 38, 644) &&
-                                        lineTime <= new DateTime(2019, 06, 3))
+                                    datePassHackTurtles = lineTime.Hour < 12 || (lineTime.Hour == 12 && lineTime.Minute <= 40);
+
+                                }
+                                if (datePassHackTurtles)
+                                {
+                                    findTagPerson(ref ubiLoc, lineTime);
+                                    String subject = ubiLoc.id;
+
+                                    ubiLoc.time = lineTime;
+                                    ubiLoc.x = Convert.ToDouble(lineCols[3]);
+                                    ubiLoc.y = Convert.ToDouble(lineCols[4]);
+                                    if (ubiLoc.type == "L")
+                                    {
+                                        if (!ubiLefts.ContainsKey(subject))
+                                            ubiLefts.Add(subject, new List<UbiLocation>());
+                                        ubiLefts[subject].Add(ubiLoc);
+                                        /***********************T1HACK**************************************/
+                                        if (ubiLoc.tag == "00:11:CE:00:00:00:02:CE" &&
+                                            lineTime >= new DateTime(2019, 02, 12, 10, 28, 38, 644) &&
+                                            lineTime <= new DateTime(2019, 06, 3))
+                                        {
+                                            if (!ubiRights.ContainsKey(subject))
+                                                ubiRights.Add(subject, new List<UbiLocation>());
+
+                                            UbiLocation ubiLocR = new UbiLocation();
+                                            ubiLocR.tag = "00:11:CE:00:00:00:R2:CE";
+                                            ubiLocR.time = ubiLoc.time;
+                                            ubiLocR.x = ubiLoc.x;
+                                            ubiLocR.y = ubiLoc.y;
+                                            ubiLocR.type = "R";
+
+                                            ubiRights[subject].Add(ubiLocR);
+                                        }
+
+
+                                    }
+                                    else
                                     {
                                         if (!ubiRights.ContainsKey(subject))
                                             ubiRights.Add(subject, new List<UbiLocation>());
-
-                                        UbiLocation ubiLocR = new UbiLocation();
-                                        ubiLocR.tag = "00:11:CE:00:00:00:R2:CE";
-                                        ubiLocR.time = ubiLoc.time;
-                                        ubiLocR.x = ubiLoc.x;
-                                        ubiLocR.y = ubiLoc.y;
-                                        ubiLocR.type = "R";
-                                       
-                                        ubiRights[subject].Add(ubiLocR);
+                                        ubiRights[subject].Add(ubiLoc);
                                     }
-                                    
-
                                 }
-                                else
-                                {
-                                    if (!ubiRights.ContainsKey(subject))
-                                        ubiRights.Add(subject, new List<UbiLocation>());
-                                    ubiRights[subject].Add(ubiLoc);
-                                }
-
                             }
                         }
                     }
@@ -2406,13 +2418,16 @@ namespace UL_Processor_V2023
 
                                     findTagPerson(ref ubiLoc, lineTime);
 
+                                    if (ubiLoc.id == "PR_LEAP_1920_AM_3")
+                                    {
+                                        Boolean stop = true;
+                                    }
 
-                                    
                                     if (ubiLoc.id != "" &&
                                         lineTime>= personDayMappings[ubiLoc.id].startDate &&
                                         lineTime<= personDayMappings[ubiLoc.id].endDate)
                                     {
-                                        
+                                         
                                         double zVal= Convert.ToDouble(line[5]);
                                         String xyValue = line[3].Trim() + "|" + line[4].Trim();
                                         Tuple<String, List<String>> tagXyTimes = new Tuple<string, List<string>>(xyValue, new List<string>());
@@ -2700,27 +2715,101 @@ namespace UL_Processor_V2023
 
                     }
 
-        public void readAliceAndGetOnsets(String dir,int startHour, int endHour, int endMinute, Dictionary<String, Tuple<String, DateTime>> lenaStartTimes)
+        public void readAliceAndGetOnsets(String dir,int startHour, int endHour, int endMinute, Dictionary<String, Tuple<String, DateTime>> lenaStartTimes, ref Boolean generalAliceFileCleaned, Boolean justCleanAlice)
         {
             String szDayFolder = Utilities.getDateDashStr(classDay);
-            //String aliceFile = "C:\\IBSS\\LB1718\\diarization_outputLB1718.rttm";
             string[] szAliceFiles = new string[0];
+            Boolean isGeneralAliceFile = false;
+            String aliceDir = "";
+
+
+
             if (Directory.Exists(dir + "//" + szDayFolder + "//ALICE_Data//"))
             {
-                szAliceFiles = Directory.GetFiles(dir + "//" + szDayFolder + "//ALICE_Data//", "*.rttm");
+                aliceDir = dir + "//" + szDayFolder + "//ALICE_Data//";
             }
             else if (Directory.Exists(dir + "//ALICE_Data//"))
             {
-                szAliceFiles = Directory.GetFiles(dir + "//ALICE_Data//", "*.rttm");
+                isGeneralAliceFile = true;
+                aliceDir = dir + "//ALICE_Data//";
             }
+            szAliceFiles = Directory.GetFiles(aliceDir, "*.rttm");
 
-            //if (Directory.Exists(dir + "//" + szDayFolder + "//ALICE_Data//"))
+
+            if (szAliceFiles.Length > 0 && File.Exists(szAliceFiles[0]))
             {
-                //szAliceFiles = Directory.GetFiles(dir + "//" + szDayFolder + "//ALICE_Data//", "*.rttm");
+                String aliceFile = szAliceFiles[0];
 
-                if (szAliceFiles.Length > 0 && File.Exists(szAliceFiles[0]))
+
+
+                /********************CLEAN*******************************/
+                if (!Directory.Exists(aliceDir + "OLD//"))
                 {
-                    String aliceFile = szAliceFiles[0];
+                    if ((!isGeneralAliceFile) || (!generalAliceFileCleaned))
+                    {
+                        if (szAliceFiles.Length > 0 && File.Exists(szAliceFiles[0]))
+                        {
+                            Dictionary<String, int> newAlice = new Dictionary<string, int>();
+                            TextWriter sw = new StreamWriter(aliceDir + "diarization_output_CLEANED.rttm", false);// countDays > 0);
+                            Boolean repeatedLines = false;
+                            try
+                            {
+
+                                using (StreamReader sr = new StreamReader(aliceFile))
+                                {
+                                    while (!sr.EndOfStream)
+                                    {
+                                        String szLine = sr.ReadLine();
+                                        int row = 0;
+                                        if (!newAlice.ContainsKey(szLine))
+                                        {
+                                            newAlice.Add(szLine, row++);
+                                            sw.WriteLine(szLine);
+                                        }
+                                        else
+                                        {
+                                            repeatedLines = true;
+                                        }
+                                    }
+                                }
+                            }
+                            catch(Exception e) { }
+                            sw.Close();
+
+                            if (repeatedLines)
+                            {
+                                Console.WriteLine("REPEATED LINES IN " + aliceFile);
+                                
+                                if (!Directory.Exists(aliceDir + "OLD//"))
+                                {
+                                    Directory.CreateDirectory(aliceDir + "OLD//");
+                                }
+                                File.Move(aliceFile, aliceDir + "OLD//" + aliceFile.Substring(aliceFile.LastIndexOf("//") + 1));
+                            }
+                            else
+                            {
+                                //File.Delete(aliceFile);
+                                if (!Directory.Exists(aliceDir + "OLD//"))
+                                {
+                                    Directory.CreateDirectory(aliceDir + "OLD//");
+                                }
+                                File.Move(aliceFile, aliceDir + "OLD//" + aliceFile.Substring(aliceFile.LastIndexOf("//") + 1));
+                            }
+                        }
+                        szAliceFiles = Directory.GetFiles(aliceDir, "*.rttm");
+                        aliceFile = szAliceFiles[0];
+                        if (isGeneralAliceFile)
+                        {
+                            generalAliceFileCleaned = true;
+                        }
+                    }
+                }
+                /***************************************************************************************/
+
+
+                if (!justCleanAlice)
+                {
+
                     int uttNumber = 0;
                     using (StreamReader sr = new StreamReader(aliceFile))
                     {
@@ -2744,12 +2833,14 @@ namespace UL_Processor_V2023
                                         DateTime itsStartTime = new DateTime();
                                         foreach (String itsFileName in lenaStartTimes.Keys)
                                         {
-                                            if (lenaStartTimes[itsFileName].Item1 == pdi.mapId)
+                                            if (lenaStartTimes[itsFileName].Item1 == pdi.mapId && line[1].Trim() == itsFileName.Replace(".its", ""))
                                             {
                                                 hasLena = true;
                                                 itsStartTime = lenaStartTimes[itsFileName].Item2;
+
                                                 break;
                                             }
+
 
                                         }
                                         if (hasLena)
@@ -2762,8 +2853,16 @@ namespace UL_Processor_V2023
                                             stime = stime.AddSeconds(aliceOnsetSecsStart);
                                             DateTime etime = stime.AddSeconds(aliceOnsetSecsEnd);
                                             String szType = line[7].Trim();
+                                            Boolean datePassHackTurtles = true;
+                                            if (this.classDay.Month == 1 &&
+                                                        this.classDay.Day == 24 &&
+                                                        this.classDay.Year == 2020)
+                                            {
+                                                datePassHackTurtles = stime.Hour < 12 || (stime.Hour == 12 && stime.Minute <= 40);
 
-                                            if (szType == "KCHI")
+                                            }
+
+                                            if (datePassHackTurtles && szType == "KCHI")
                                             {
                                                 LenaOnset lenaOnset = new LenaOnset();
                                                 lenaOnset.recStartTime = stime.AddSeconds(aliceOnsetSecsStart);
@@ -2791,7 +2890,6 @@ namespace UL_Processor_V2023
                     }
                 }
             }
-
            // LenaOnset lenaOnset = new LenaOnset();
             ////lenaOnset.recStartTime = recStartTime;
             //lenaOnset.startSec = startSecs;
@@ -2896,8 +2994,16 @@ namespace UL_Processor_V2023
                                 double bdSecs = (end - start).Seconds;
                                 double bdMilliseconds = (end - start).Milliseconds > 0 ? ((end - start).Milliseconds / 1000.00) : 0.00;  
                                 double bd = bdSecs + bdMilliseconds;
-                                 
-                                if (Utilities.isSameDay(start, classDay) &&
+                                Boolean datePassHackTurtles = true;
+                                if (this.classDay.Month == 1 &&
+                                            this.classDay.Day == 24 &&
+                                            this.classDay.Year == 2020)
+                                {
+                                    datePassHackTurtles = start.Hour < 12 || (start.Hour == 12 && start.Minute <= 40);
+
+                                }
+                                if (datePassHackTurtles&&
+                                    Utilities.isSameDay(start, classDay) &&
                                 start.Hour >= startHour &&
                                 (start.Hour < endHour || (start.Hour == endHour && start.Minute <= endMinute)) &&
                                 start >= pdi.startDate &&

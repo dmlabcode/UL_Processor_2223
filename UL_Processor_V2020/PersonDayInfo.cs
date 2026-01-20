@@ -102,7 +102,7 @@ namespace UL_Processor_V2023
                     {
                         String[] endTime = line[columnIndex["END"]].Trim().Split(':');
                         endDate = new DateTime(ed.Year, ed.Month, ed.Day, Convert.ToInt16(endTime[0]), Convert.ToInt16(endTime[1]), endDate.Second);
-                        if (endDate.Hour >= 1)
+                        if (endDate.Hour >= 1 && endDate.Hour<7)
                             endDate = endDate.AddHours(12);
                     }
                     catch (Exception e)

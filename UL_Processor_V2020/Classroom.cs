@@ -1154,10 +1154,12 @@ namespace UL_Processor_V2023
                
             }
         }
-        public void processAlice()
+        public void processAlice(Boolean justCleanAlice)
         {
 
             /*4.1 For each Collection Day process daily files*/
+ 
+            Boolean generalAliceFileCleaned = false;
             foreach (DateTime day in classRoomDays)
             {
                 ClassroomDay classRoomDay = new ClassroomDay(day);
@@ -1167,20 +1169,25 @@ namespace UL_Processor_V2023
                 String szOnsetOutputFile = dir + "//SYNC//DAYONSETS_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                 Dictionary<String, Tuple<String, DateTime>> lenaStartTimes = classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile, startHour, endHour, endMinute);//takes only mapping start-end
                 //classRoomDay.lenaOnsets = new Dictionary<string, List<LenaOnset>>();
-                classRoomDay.readAliceAndGetOnsets(dir, startHour, endHour, endMinute, lenaStartTimes);
+                classRoomDay.readAliceAndGetOnsets(dir, startHour, endHour, endMinute, lenaStartTimes,ref generalAliceFileCleaned,  justCleanAlice);
                 //GR
-                String sGrOutputFile = dir + "//SYNC//GR//DAYGR_TYPE_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                //classRoomDay.makeGofRFilesAndTimeDict(dir, sGrOutputFile, this.diagnosisList, false);
-                classRoomDay.getTenthsFromUbi(dir, sGrOutputFile);
 
-                classRoomDay.setTenthOfSecLENA();// ALICE();
 
-                Dictionary<String, Pair> pairs = classRoomDay.countInteractions(lenaStartTimes,this.grMin, this.grMax, this.angle, "", ""); //; //count interactions but no need to write a file
+                if (!justCleanAlice)
+                {
+                    String sGrOutputFile = dir + "//SYNC//GR//DAYGR_TYPE_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                    //classRoomDay.makeGofRFilesAndTimeDict(dir, sGrOutputFile, this.diagnosisList, false);
+                    classRoomDay.getTenthsFromUbi(dir, sGrOutputFile);
 
-                //*PAIRACTIVITY REPORT*/
-                String szPairActOutputFile = dir + "//SYNC//ALICE_PAIRACTIVITY//ALICE_PAIRACTIVITY_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                classRoomDay.writePairActivityData(pairs, className, szPairActOutputFile, this.diagnosisList, this.languagesList);
-                filesToMerge["ALICE_PAIRACTIVITIES"].Add(szPairActOutputFile);
+                    classRoomDay.setTenthOfSecLENA();// ALICE();
+
+                    Dictionary<String, Pair> pairs = classRoomDay.countInteractions(lenaStartTimes, this.grMin, this.grMax, this.angle, "", ""); //; //count interactions but no need to write a file
+
+                    //*PAIRACTIVITY REPORT*/
+                    String szPairActOutputFile = dir + "//SYNC//ALICE_PAIRACTIVITY//ALICE_PAIRACTIVITY_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                    classRoomDay.writePairActivityData(pairs, className, szPairActOutputFile, this.diagnosisList, this.languagesList);
+                    filesToMerge["ALICE_PAIRACTIVITIES"].Add(szPairActOutputFile);
+                }
 
             }
         }
