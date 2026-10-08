@@ -119,7 +119,12 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="MLU_calculation.py" />
     <Content Include="SampleCalls.txt" />
+    <Content Include="vtcwhisper.py" />
+    <Content Include="whisper_vtc1_alignment.py" />
+    <Content Include="whisper_vtc1_alignment_v3.py" />
+    <Content Include="whisper_vtc1_alignment_v2.py" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

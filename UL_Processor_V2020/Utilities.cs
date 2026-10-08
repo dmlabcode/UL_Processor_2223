@@ -9,6 +9,9 @@ using static IronPython.Modules._ast;
 using System.Runtime.Remoting.Messaging;
 using IronPython.Compiler;
 using IronPython.Runtime;
+using IronPython.Compiler.Ast;
+using static IronPython.Modules.PythonIterTools;
+using IronPython.Runtime.Operations;
 
 namespace UL_Processor_V2023
 {
@@ -598,6 +601,239 @@ namespace UL_Processor_V2023
             }
             return r;
         }
-         
+
+
+
+        public static void fixDiagnosis(String szFile, String szMapFile)
+        {
+            //C:\IBSS\CLASSROOMS_2324\LEAP_AM\Synched_Data_Gr0_2to2_45_DEN_ZFILTER\PAIRACTIVITY_V2\PAIRACTIVITY_LEAP_AM20232024_GR0_22_DEN_101624_V2284110092ALL.CSV
+            //C:\IBSS\CLASSROOMS_2324\LEAP_AM\MAPPING_LEAP_AM_BASE.csv
+            Dictionary<String, Person> personBaseMappings = new Dictionary<string, Person>();
+            if(!Directory.Exists(szFile.Substring(0, szFile.LastIndexOf("\\")+1)+"\\FIXING"))
+            {
+                Directory.CreateDirectory(szFile.Substring(0, szFile.LastIndexOf("\\") + 1) + "\\FIXING");
+            }
+            String fileCopy = szFile.Substring(0, szFile.LastIndexOf("\\") + 1) + "FIXING\\" + szFile.Substring(szFile.LastIndexOf("\\") + 1).Replace(".", new Random().Next()+".");
+            File.Move(szFile, fileCopy);
+            List<String> diagnosisList = new List<String>();
+            List<String> languagesList = new List<String>();
+
+            List<int> dList = new List<int>();
+                List<int> lList = new List<int>();
+                Dictionary<String, int> columnIndexBase = new Dictionary<string, int>();
+                columnIndexBase.Add("LONGID", -1);
+                columnIndexBase.Add("SHORTID", -1);
+                columnIndexBase.Add("TYPE", -1);
+                columnIndexBase.Add("DOB", -1);
+                columnIndexBase.Add("SEX", -1);
+
+                columnIndexBase.Add("PREPLSDATE", -1);
+                columnIndexBase.Add("PREPLSLENA", -1);
+                columnIndexBase.Add("POSTPLSDATE", -1);
+                columnIndexBase.Add("POSTPLSLENA", -1);
+
+
+                if (File.Exists(szMapFile))
+                    using (StreamReader sr = new StreamReader(szMapFile))
+                    {
+                        if (!sr.EndOfStream)
+                        { 
+                            String commaLine = sr.ReadLine();
+                            String[] line = commaLine.Split(',');
+                            int cp = line[0].Trim().ToUpper() != "ROSTER" ? 0 : 1;
+                            foreach (String szCol in line)
+                            {
+                                if (szCol.ToUpper().Trim().Contains("DIAGNOSIS") || szCol.ToUpper().Trim().Contains("DEVICE"))
+                                {
+                                    String thisDiagnosis = szCol.Trim().Replace("Subject_", "").Replace("Subject", "");
+                                    diagnosisList.Add("Subject_" + thisDiagnosis);
+                                    diagnosisList.Add("Partner_" + thisDiagnosis);
+                                    dList.Add(cp);
+                                }
+                                else if (szCol.ToUpper().Trim().Contains("LANGUAGE"))
+                                {
+                                    languagesList.Add("Subject_"+szCol.Trim());
+                                    languagesList.Add("Partner_" + szCol.Trim());
+                                    lList.Add(cp);
+                                }
+                                else if (szCol.ToUpper().Trim().Contains("ID") && (szCol.ToUpper().Trim().Contains("SUBJECT") || szCol.ToUpper().Trim().Contains("LONG")))
+                                {
+                                    columnIndexBase["LONGID"] = cp;
+                                }
+                                else if (szCol.ToUpper().Trim().Contains("ID") && szCol.ToUpper().Trim().Contains("SHORT"))
+                                {
+                                    columnIndexBase["SHORTID"] = cp;
+                                }
+                                else if (szCol.ToUpper().Trim().Contains("TYPE"))
+                                {
+                                    columnIndexBase["TYPE"] = cp;
+                                }
+                                else if (szCol.ToUpper().Trim().Contains("DOB"))
+                                {
+                                    columnIndexBase["DOB"] = cp;
+                                }
+                                else if (szCol.ToUpper().Trim().Contains("SEX") || szCol.ToUpper().Trim().Contains("GENDER"))
+                                {
+                                    columnIndexBase["SEX"] = cp;
+                                }
+                                else if (szCol.ToUpper().Trim().Contains("PLS"))
+                                {
+                                    if (szCol.ToUpper().Trim().Contains("PRE"))
+                                    {
+                                        if (szCol.ToUpper().Trim().Contains("DATE"))
+                                        {
+                                            columnIndexBase["PREPLSDATE"] = cp;
+                                        }
+                                        else if (szCol.ToUpper().Trim().Contains("LENA"))
+                                        {
+                                            columnIndexBase["PREPLSLENA"] = cp;
+                                        }
+                                    }
+                                    else if (szCol.ToUpper().Trim().Contains("POST"))
+                                    {
+                                        if (szCol.ToUpper().Trim().Contains("DATE"))
+                                        {
+                                            columnIndexBase["POSTPLSDATE"] = cp;
+                                        }
+                                        else if (szCol.ToUpper().Trim().Contains("LENA"))
+                                        {
+                                            columnIndexBase["POSTPLSLENA"] = cp;
+                                        }
+                                    }
+                                }
+                                cp++;
+
+                            }
+
+                        }
+
+                        while ((!sr.EndOfStream)) 
+                        {
+                            String commaLine = sr.ReadLine();
+                            String[] line = commaLine.Split(',');
+                            if (line.Length > 5 && line[1] != "")
+                            {
+                                Person person = new Person(commaLine, "LONGID", dList, lList, columnIndexBase);//longid
+
+                                if (person.mapId != "" && (!personBaseMappings.ContainsKey(person.mapId)) && (true || person.subjectType != "LAB"))
+                                {
+                                    personBaseMappings.Add(person.mapId, person);
+                                }
+
+                            }
+                        }
+                  
+            }
+            TextWriter sw = new StreamWriter(szFile);//.Replace(".",new Random().Next()+"NEW."));
+
+            using (StreamReader sr = new StreamReader(fileCopy))
+            {
+                int cutFrom = -1;
+                int cutTo = -1;
+
+                int cutFromL = -1;
+                int cutToL = -1;
+
+                if (!sr.EndOfStream)
+                {
+                    String commaLine = sr.ReadLine();
+                    String[] line = commaLine.Split(',');
+                    int pos = 0;
+                    foreach(String szCol in line)
+                    {
+                        if(szCol.ToUpper().Contains("DIAGNOSIS")|| szCol.ToUpper().Contains("LANGUAGE") || szCol.ToUpper().Contains("DEVICE"))
+                        {
+                            if(!szCol.ToUpper().Contains("LEAD_"))
+                            {
+                                if (cutFrom < 0)
+                                    cutFrom = pos;
+                                else
+                                    cutTo = pos;
+                            }
+                            else
+                            {
+                                if (cutFromL < 0)
+                                    cutFromL = pos;
+                                else
+                                    cutToL = pos;
+                            }
+                        }
+
+                        pos++;
+
+
+                    }
+                    String[] firstPart = new ArraySegment<String>(line, 0, cutFrom).ToArray();
+                    String szLeadPart = "";
+                    String[] lastPart;
+                    var newArr = firstPart.Concat(diagnosisList).Concat(languagesList);
+                    if (cutFromL > 0)
+                    {
+                        String[] midPart = new ArraySegment<String>(line, cutTo + 1, cutFromL - cutTo-1).ToArray();
+                        szLeadPart = String.Join(",", diagnosisList.Concat(languagesList));
+                        szLeadPart=szLeadPart.Replace("Subject_", "Lead_Subject_").Replace("Partner_", "Lead_Partner_");
+                        newArr = newArr.Concat(midPart); 
+                        lastPart = new ArraySegment<String>(line, cutToL + 1, line.Length - (cutToL + 1)).ToArray();
+                      }
+                    else
+                    {
+                        lastPart = new ArraySegment<String>(line, cutTo + 1, line.Length - (cutTo + 1)).ToArray();
+                    }
+                    
+                    sw.WriteLine(String.Join(",",newArr)+","+szLeadPart + "," + String.Join(",", lastPart));
+
+                }
+                while ((!sr.EndOfStream))
+                {
+                    String commaLine = sr.ReadLine();
+                    String[] line = commaLine.Split(',');
+                    String[] firstPart = new ArraySegment<String>(line, 0, cutFrom).ToArray();
+                    
+                    String newDiagnosis = "";
+
+                    Person s = personBaseMappings[line[1]];
+                    Person p = personBaseMappings[line[2]];
+
+                    int cd = 0;
+                    foreach (String d in s.diagnosisList)
+                    {
+                        newDiagnosis += ( (cd>0?",":"")+ d + "," + p.diagnosisList[cd] );
+                        cd++;
+                    }
+                    cd = 0;
+                    String newLanguages = "";
+                    foreach (String l in s.languagesList)
+                    {
+                        newLanguages += ((cd > 0 ? "," : "")+ l + ", " + p.languagesList[cd] );
+                        cd++;
+                    }
+
+                    var newArr = firstPart.Concat(newDiagnosis.Split(',')).Concat(newLanguages.Split(','));
+                    String[] lastPart;
+                    if (cutFromL > 0)
+                    {
+                        String[] midArr = new ArraySegment<String>(line, cutTo + 1, cutFromL - cutTo - 1).ToArray(); 
+                         
+                         
+                        newArr = newArr.Concat(midArr).Concat(newDiagnosis.Split(',')).Concat(newLanguages.Split(','));
+                        lastPart = new ArraySegment<String>(line, cutToL + 1, line.Length - (cutToL + 1)).ToArray();
+                    }
+                    else
+                    {
+                        lastPart = new ArraySegment<String>(line, cutTo+1, line.Length-(cutTo + 1)).ToArray();
+
+                    }
+
+                    newArr = newArr.Concat(lastPart);
+                    sw.WriteLine(String.Join(",", newArr));
+
+
+                }
+
+            }
+            sw.Close();
+ 
+        }
+
     }
 }

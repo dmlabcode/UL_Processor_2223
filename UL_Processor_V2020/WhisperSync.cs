@@ -23,6 +23,56 @@ namespace UL_Processor_V2023
     }
     internal class WhisperSync
     {
+        public void syncWhisper2026(Classroom cr, String szTimeStampFileName)
+        {
+            foreach (DateTime day in cr.classRoomDays)
+            {
+                ClassroomDay classRoomDay = new ClassroomDay(day);
+                classRoomDay.setMappings(cr.dir, cr.mapPrefix, cr.personBaseMappings, cr.mapById, cr.startHour, cr.endHour, cr.endMinute);
+
+                //szTimeStampFile is a csv file that has a column for SUBJECTID (long id), LENA_START and SONY_START in hh:mm:ss.000 format
+                Dictionary<String, String> subjectSonyMap = new Dictionary<String, String>();
+                if (File.Exists(cr.dir + "//MAPPINGS//" + szTimeStampFileName))
+                {
+                    using (StreamReader sr = new StreamReader(cr.dir+"//MAPPINGS//"+ szTimeStampFileName))
+                    {
+                        Dictionary<String, int> columnIndex = new Dictionary<String, int>();
+                        columnIndex["SUBJECTID"] = 0;
+                        columnIndex["SONY_START"] = 0;
+
+                        if (!sr.EndOfStream)
+                        {
+                            String szLine = sr.ReadLine();
+                            String[] line = szLine.Split(',');
+                            int colIndex = 0;
+                            foreach (String szColumn in line)
+                            {
+                                if (szColumn.Trim().ToUpper() == "SUBJECTID")
+                                {
+                                    columnIndex["SUBJECTID"] = colIndex;
+                                }
+                                else if (szColumn.Trim().ToUpper() == "SONY_START")
+                                {
+                                    columnIndex["SONY_START"] = colIndex;
+                                }
+                                if (columnIndex["SUBJECTID"] > 0 && columnIndex["SONY_START"] > 0)
+                                {
+                                    break;
+                                }
+                                colIndex++;
+                            }
+                        }
+                        while (!sr.EndOfStream)
+                        {
+                            String szLine = sr.ReadLine();
+                            String[] line = szLine.Split(',');
+                            subjectSonyMap.Add(line[columnIndex["SUBJECTID"]], line[columnIndex["SONY_START"]]);
+                        }
+                    }
+                }
+                getUbiInteractions(cr, classRoomDay, subjectSonyMap);
+            }
+        }
         public void syncWhisperTone(Classroom cr)
         {
             foreach (DateTime day in cr.classRoomDays)
@@ -82,11 +132,11 @@ namespace UL_Processor_V2023
 
 
         }
-        public void syncWhisper2223(Classroom cr)
+        public void syncWhisper2223(Classroom cr, String timeFileName, String outputFileName)
         {
             foreach (DateTime day in cr.classRoomDays)
             {
-                TextWriter sw = new StreamWriter(cr.dir + "//BEEPSANDTIMESV2" + Utilities.getDateStrMMDDYY(day) + ".csv");
+                TextWriter sw = new StreamWriter(cr.dir + "//"+ timeFileName + Utilities.getDateStrMMDDYY(day) + ".csv");
 
                 double minLenaOnset = -1;
                 String minLenaOnsetFile = "";
@@ -96,8 +146,8 @@ namespace UL_Processor_V2023
                 ClassroomDay classRoomDay = new ClassroomDay(day);
                 classRoomDay.setMappings(cr.dir, cr.className, cr.personBaseMappings, cr.mapById, cr.startHour, cr.endHour, cr.endMinute);
 
-                String beepFile = cr.dir + "//SF2223BEEPS.csv";
-                if (File.Exists(beepFile))
+                String beepFile = cr.dir + "//"+outputFileName;
+                if (File.Exists(beepFile))//
                 {
                     getMinOnset(beepFile, cr, classRoomDay, day, ref minLenaOnset, ref minLenaOnsetFile, ref minLenaStartTime, ref newBeepLines, ref sw);
                     setAudioStartTimes(cr,classRoomDay, day, minLenaOnset, minLenaOnsetFile, ref newBeepLines, ref sw, ref subjectSonyMap);
@@ -148,9 +198,9 @@ namespace UL_Processor_V2023
 
                             /*
                              * 	start_sec	end_sec	lang	language_t3	probability_t3	sentence
-0	0	10.3	en	['en', 'it', 'la']	{'en': 0.8521786332130432, 'it': 0.06686361134052277, 'la': 0.04212208092212677}	 A4320AM, this is a Linear T3 being used by Subjet T3 and Sony A75.
-1	10.3	13.3	en	['en', 'es', 'fi']	{'en': 0.9219698309898376, 'es': 0.021056130528450012, 'fi': 0.012256273068487644}	 Starfish Debi, January 30th, 2023.
-*/
+                            0	0	10.3	en	['en', 'it', 'la']	{'en': 0.8521786332130432, 'it': 0.06686361134052277, 'la': 0.04212208092212677}	 A4320AM, this is a Linear T3 being used by Subjet T3 and Sony A75.
+                            1	10.3	13.3	en	['en', 'es', 'fi']	{'en': 0.9219698309898376, 'es': 0.021056130528450012, 'fi': 0.012256273068487644}	 Starfish Debi, January 30th, 2023.
+                            */
                             while (!sr.EndOfStream)
                             {
                                 String szLine = sr.ReadLine();
@@ -181,8 +231,6 @@ namespace UL_Processor_V2023
                                                 {
                                                     double dist = Utilities.calcSquaredDist(classRoomDay.ubiTenths[t][subject], classRoomDay.ubiTenths[t][pdi.mapId]);
                                                     Boolean withinGofR = (dist <= (cr.grMax * cr.grMax)) && (dist >= (cr.grMin * cr.grMin));
-                                                     
-
 
                                                     Tuple<double, double> angles = Utilities.withinOrientationData(classRoomDay.ubiTenths[t][subject], classRoomDay.ubiTenths[t][pdi.mapId]);
                                                     Boolean orientedCloseness = withinGofR && ((Math.Abs(angles.Item1) <= 45 && Math.Abs(angles.Item2) <= 45));
@@ -212,23 +260,11 @@ namespace UL_Processor_V2023
 
                                                         }
                                                     }
-                                                   // if (inSocialContactWithKid && inSocialContactWithAdult && inSocialContactWithTeacher)
-                                                    {
-                                                     //   break;
-                                                    }
                                                 }
                                                  
                                             }
                                         }
-                                        if (inSocialContactWithKid && inSocialContactWithAdult && inSocialContactWithTeacher)
-                                        {
-                                            t = endTime;
-                                        }
-                                        else
-                                        {
-                                            t = t.AddMilliseconds(100);
-                                        }
-
+                                        t = t.AddMilliseconds(100);
                                     }
                                     sw.Write(szLine + "," + inSocialContactWithKid + "," + inSocialContactWithAdult + "," + inSocialContactWithTeacher+","+
                                         startTime.Hour+":"+startTime.Minute+":"+startTime.Second+"."+startTime.Millisecond + "," +

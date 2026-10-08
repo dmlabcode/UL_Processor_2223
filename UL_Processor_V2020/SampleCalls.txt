@@ -1,4 +1,45 @@
 ﻿
+/******************************************************************FIXING DIAGNOSIS ETC***************************************************************/
+
+
+
+
+          //  Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\LEAP_AM\\Synched_Data_Gr0_2to2_45_DEN_ZFILTER\\PAIRACTIVITY_V2\\PAIRACTIVITY_LEAP_AM20232024_GR0_22_DEN_101624_V2284110092ALL.CSV",
+          //      "C:\\IBSS\\CLASSROOMS_2324\\LEAP_AM\\MAPPING_LEAP_AM_BASE.csv");
+
+         //   Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\LEAP_PM\\Synched_Data_Gr0_2to2_45_DEN_ZFILTER\\PAIRACTIVITY_V2\\PAIRACTIVITY_LEAP_PM20232024_GR0_22_DEN_101724_V2543071128ALL.CSV",
+         //       "C:\\IBSS\\CLASSROOMS_2324\\LEAP_PM\\MAPPING_LEAP_PM_BASE.csv");
+
+
+            Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\StarFish_2324\\Synched_Data_GR0_22_DEN_MAXZ1_25\\PAIRACTIVITY_V2\\PAIRACTIVITY_GR0_22_DEN_090324_V22068833080ALL.CSV",
+                "C:\\IBSS\\CLASSROOMS_2324\\StarFish_2324\\MAPPING_StarFish_2324_BASE.csv");
+
+
+            Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\Room8_2324_OUTSIDE\\SYNC\\PAIRACTIVITY_V2\\PAIRACTIVITY_Room8_2324_OUTSIDE_GR0_22_DEN_110524_V2109973952ALL.CSV",
+                "C:\\IBSS\\CLASSROOMS_2324\\Room8_2324_OUTSIDE\\MAPPING_Room8_2324_OUTSIDE_BASE.csv");
+
+
+            Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\Room8_2324\\Synched_Data_DEN0_2to2_ZFILTER\\PAIRACTIVITY_V2\\PAIRACTIVITY_Room8_2324_GR0_22_DEN_103024_V21909419618ALL.CSV",
+                "C:\\IBSS\\CLASSROOMS_2324\\Room8_2324\\MAPPING_Room8_2324_BASE.csv");
+
+
+
+
+            Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\LadyBugs\\SYNC\\PAIRACTIVITY_V2\\PAIRACTIVITY_GR0_22_DEN_090624_V21917303933ALL.CSV",
+                "C:\\IBSS\\CLASSROOMS_2324\\LadyBugs\\MAPPING_LadyBugs_BASE.csv");
+
+            Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\Bubbles_2324\\SYNC\\PAIRACTIVITY_V2\\PAIRACTIVITY_Bubbles_2324_GR0_22_DEN_103024_V2482457386ALL.CSV",
+                "C:\\IBSS\\CLASSROOMS_2324\\Bubbles_2324\\MAPPING_Bubbles_2324_BASE.csv");
+
+            Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\Avengers_2324\\SYNC\\PAIRACTIVITY_V2\\PAIRACTIVITY_Avengers_2324_GR0_22_DEN_111124_V21716448093ALL.CSV",
+                "C:\\IBSS\\CLASSROOMS_2324\\Avengers_2324\\MAPPING_Avengers_2324_BASE.csv");
+
+            Utilities.fixDiagnosis("C:\\IBSS\\CLASSROOMS_2324\\AppleTree_2324\\SYNC\\PAIRACTIVITY_V2\\PAIRACTIVITY_AppleTree_2324_GR0_22_DEN_110524_V2560687115ALL.CSV",
+                "C:\\IBSS\\CLASSROOMS_2324\\AppleTree_2324\\MAPPING_AppleTree_2324_BASE.csv");
+             
+
+
+
 /**************************************syncWhisper(string[] szClassroomsToProcess, Boolean isToneDetection)*****************************************/
 
 String[] szClassroomsToProcess = {
@@ -13,6 +54,15 @@ String[] szClassroomsToProcess = {
 
 
 /******************************************UL*************************************************************/
+
+     String szClassroomSettings = " MAP_PREFIX:Room8_OUTSIDE REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Room8_OUTSIDE GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+                    "10/14/2024,11/18/2024,01/13/2025,02/10/2025,03/17/2025,04/07/2025,05/14/2025"+ szClassroomSettings};
+
+
 //String[] szClassroomsToProcess = { "DIR:C://IBSS//CLASSROOMS_2223// CLASSNAME:StarFish_2223 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:03/15/2023 HACKT1:NO
 //:YES TEN:YES VEL:NO ANGLES:YES SUMALL:YES ITS:YES GR:YES DBS:YES APPROACH:YES SOCIALONSETS:YES" };
 
@@ -230,9 +280,11 @@ String[] szClassroomsToProcess = {
        szClassroomSettings};
 
 
-
-  String[] szClassroomsToProcess = {
-       "DIR:C://IBSS//CLASSROOMS_2324// CLASSNAME:AppleTree_2324 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
+  String szClassroomSettings = " MAP_PREFIX:AppleTree_2324 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+            
+            
+            String[] szClassroomsToProcess = {
+       "DIR:H:\\CLASSROOMS_2324_PART2// CLASSNAME:AppleTree_2324 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:11 MINMAX:50 DAYS:" +
        "09/28/2023,10/26/2023,11/30/2023,12/12/2023,01/25/2024,02/23/2024,03/13/2024,04/15/2024,05/17/2024,06/25/2024,07/09/2024"+
        szClassroomSettings};
 
@@ -431,10 +483,15 @@ String[] szClassroomsToProcess = {
 "10/24/2017,11/03/2017,11/17/2017,12/14/2017,01/11/2018,02/02/2018,02/16/2018,03/13/2018,03/20/2018,05/01/2018"+//"10/14/2024,11/18/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025"+
 szClassroomSettings};
 */
-/* String[] szClassroomsToProcess = {
+/* String szClassroomSettings = " MAP_PREFIX:Bubbles_2425 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+            String[] szClassroomsToProcess = {
 "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Bubbles_2425 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
-"10/28/2024,11/06/2024,01/22/2025,02/28/2025,03/03/2025,04/16/2025,05/05/2025"+
-szClassroomSettings};*/
+"10/28/2024,11/06/2024,01/22/2025,02/28/2025,03/03/2025,04/16/2025,05/05/2025,06/16/2025,07/01/2025"+
+szClassroomSettings};
+
+
+*/
 
 
 
@@ -459,10 +516,13 @@ szClassroomSettings};*/
  *  
  *  2425
  *  
- *  String[] szClassroomsToProcess = {
-"DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:AppleTree_2425 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
-"11/20/2024,12/05/2024,01/31/2025,02/19/2025,03/21/2025,04/09/2025,05/08/2025"+//"10/04/2024,11/20/2024,12/05/2024,01/31/2025,02/19/2025,03/21/2025"+
-szClassroomSettings};
+ * /*      String szClassroomSettings = " MAP_PREFIX:AppleTree_2425 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+
+                  String[] szClassroomsToProcess = {
+      "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:AppleTree_2425 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
+      "10/04/2024,11/20/2024,12/05/2024,01/31/2025,02/19/2025,03/21/2025,05/08/2025"+//"10/04/2024,11/20/2024,12/05/2024,01/31/2025,02/19/2025,03/21/2025"+
+      szClassroomSettings};*/
 
      String[] szClassroomsToProcess = {
 "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:LEAP_AM GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:10 MINMAX:50 DAYS:" +
@@ -490,16 +550,15 @@ String[] szClassroomsToProcess = {
 "10/17/2024,10/18/2024,11/12/2024,11/13/2024,12/10/2024,12/12/2024,01/16/2025,01/21/2025,02/11/2025,02/13/2025,03/18/2025,03/20/2025,04/08/2025,04/10/2025"+//"10/04/2024,11/20/2024,12/05/2024,01/31/2025,02/19/2025,03/21/2025"+
 szClassroomSettings};
 
-String[] szClassroomsToProcess = {
+  String szClassroomSettings = " MAP_PREFIX:Turtles REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+            String[] szClassroomsToProcess = {
 "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Turtles GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
-"09/23/2024,10/25/2024,11/22/2024,12/09/2024,01/15/2025"+//,12/12/2024"+//"09/25/2024,10/30/2024,11/13/2024,12/12/2024"+
+"09/23/2024,10/25/2024,11/22/2024,12/09/2024,01/15/2025"+
 szClassroomSettings};
 
 
-String[] szClassroomsToProcess = {
-"DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Bubbles_2425 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
-"10/28/2024,11/06/2024,01/22/2025,02/28/2025"+
-szClassroomSettings};
+
 
  String[] szClassroomsToProcess = {
 "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Avengers GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
@@ -511,10 +570,14 @@ szClassroomSettings};
 "10/14/2024,11/18/2024,01/13/2025,02/10/2025,03/17/2025"+//"10/14/2024,11/18/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025"+
 szClassroomSettings};
 
+String szClassroomSettings = " MAP_PREFIX:Room4 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
 
-"DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Room4 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
-"10/16/2024,11/14/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025"+
-szClassroomSettings};
+
+            String[] szClassroomsToProcess = {
+    "DIR:C://IBSS//CLASSROOMS_2425// CLASSNAME:Room4 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+            "10/16/2024,11/14/2024,12/16/2024,01/06/2025,02/12/2025,03/10/2025,04/14/2025,05/12/2025"+ 
+            szClassroomSettings};
+
 String processType = "INTERPOLATION";// "UL";// "WHISPER";// "UL";
 
 String szClassroomSettings = " REDENOISE:YES PROCESS:YES JUSTPLS:NO LABS:YES SEWIO:YES";// YES"; 

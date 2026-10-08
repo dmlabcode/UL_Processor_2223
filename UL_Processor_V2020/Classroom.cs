@@ -1119,7 +1119,7 @@ namespace UL_Processor_V2023
 
                 //GR
                 String sGrOutputFile = dir + "//SYNC//"+( doTenths?"": "UBI") +"GR//DAYUBIGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
-                if (doTenths)
+                if (false)
                 {
                     sGrOutputFile=sGrOutputFile.Replace(".CSV", "10TH.CSV");
                     classRoomDay.getTenthsFromUbi(dir, sGrOutputFile);
@@ -1211,9 +1211,19 @@ namespace UL_Processor_V2023
                 String szOnsetOutputFile = dir + "//SYNC//ONSETS//DAYONSETS_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                 Dictionary<String, Tuple<String, DateTime>> lenaStartTimes = classRoomDay.readLenaItsAndGetOnsets(dir, szOnsetOutputFile, startHour, endHour, endMinute);//takes only mapping start-end
                 filesToMerge["ONSETS"].Add(szOnsetOutputFile);
-                 //
+                //
                 //GR
-                String sGrOutputFile = dir + "//SYNC//GR//DAYGR_TYPE_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+
+
+
+                /*4.12 UBI GR*/
+                 //UBIGR
+                    String sGrOutputFile = dir + "//SYNC//UBIGR//DAYUBIGR_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
+                    classRoomDay.makeGofRFilesAndTimeDictFromUbi(dir, sGrOutputFile);//
+               
+
+
+                sGrOutputFile = dir + "//SYNC//GR//DAYGR_TYPE_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";
                 classRoomDay.makeGofRFilesAndTimeDict(dir, sGrOutputFile, this.diagnosisList);
 
                 String szTenthOutputFile = dir + "//SYNC//COTALK//DAYCOTALK_" + Utilities.getDateStrMMDDYY(day) + "_" + Utilities.szVersion + ".CSV";

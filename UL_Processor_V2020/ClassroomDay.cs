@@ -2418,10 +2418,7 @@ namespace UL_Processor_V2023
 
                                     findTagPerson(ref ubiLoc, lineTime);
 
-                                    if (ubiLoc.id == "PR_LEAP_1920_AM_3")
-                                    {
-                                        Boolean stop = true;
-                                    }
+                                    
 
                                     if (ubiLoc.id != "" &&
                                         lineTime>= personDayMappings[ubiLoc.id].startDate &&

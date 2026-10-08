@@ -12,6 +12,8 @@ using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
 using IronPython.Runtime.Operations;
 using UL_Processor_V2020;
+using static IronPython.Modules._ast;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace UL_Processor_V2023
 {
@@ -34,36 +36,201 @@ namespace UL_Processor_V2023
         }
         static void Main(string[] arguments)
         {
-            String szClassroomSettings = " MAP_PREFIX:APPLETREE_2526 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+            //Tuple<double,double> d= Utilities.getRelativeAngles( 1,  3,  0,  2,  8,  6,  2,  0);
+
+
+
+
+            string cmd = Path.Combine(AppDomain.CurrentDomain.BaseDirectory.Replace("\\bin\\Debug", ""), "whisper_vtc1_alignment_v3.py");// "vtcwhisper.py");
+            
+            //python whisper_vtc1_alignment.py Path/To/Whisper/Output.csv Path/To/VTC1/file.rttm --alt-labels
+            //python match_speakers.py whisper.csv vtc.csv output.csv
+            //string cmdPython = cmd.Replace("vtcwhisper.py", "\\Python310\\python.exe");
+            string cmdPython = cmd.Replace("whisper_vtc1_alignment_v3.py", "\\Python310\\python.exe");
+            string args = "H:\\07-16-2026\\Whisper_Data\\ " +
+                "H:\\07-16-2026\\ALICE_Data\\diarization_output.rttm " +
+                "H:\\07-16-2026\\Whisper_Data_with_ALICE";// +
+                //"H:\\2526_TEMP\\05-04-2026\\MAPPINGS\\MAPPING_StarFish_2526.csv ";
+            // H:\\2526_TEMP\\05-04-2026\\SUBJECT_2\\SLP\\test.csv ";
+            //H:\\2526_LRIC_TEMP\\05-14-2026\\108_01_AST_2min_large-v2_wtime.csv H:\\2526_LRIC_TEMP\\05-14-2026\\diarization_output_108_01_wtime.csv H:\\2526_LRIC_TEMP\\05-14-2026\\test.csv ";
+
+            ProcessStartInfo start = new ProcessStartInfo();
+            start.FileName = "C:\\VS\\UL_PROCESSOR_2223\\UL_Processor_V2020\\Python310\\python.exe";
+            start.Arguments = string.Format("{0} {1}", cmd, args);
+            start.UseShellExecute = false;
+            start.RedirectStandardOutput = true;
+            //
+
+         /*   using (Process process = Process.Start(start))
+            {
+                 
+                using (StreamReader reader = process.StandardOutput)
+                {
+                    string result = reader.ReadToEnd();
+                    Console.Write(result);
+
+                    process.WaitForExit();
+                    Console.Write(result);
+                }
+            }
+         */
+            //python MLU_calculation.py Path/To/Aligned/Transcript/Speaker/file.csv --output Path/For/MLU/output.csv
+            cmd = Path.Combine(AppDomain.CurrentDomain.BaseDirectory.Replace("\\bin\\Debug", ""), "MLU_calculation.py");// "vtcwhisper.py");
+            cmdPython = cmd.Replace("MLU_calculation.py", "\\Python310\\python.exe");
+            args = "H:\\07-16-2026\\036_LRIC_APPLETREE_2526_8_071626_AST_2min_large-v2_ALICE.csv --output H:\\07-16-2026\\MLU_DS_STARFISH_2526_8_071626.csv";// H:\\2526_TEMP\\05-04-2026\\SUBJECT_2\\SLP\\test.csv ";
+                                                                                                                                                               //H:\\2526_LRIC_TEMP\\05-14-2026\\108_01_AST_2min_large-v2_wtime.csv H:\\2526_LRIC_TEMP\\05-14-2026\\diarization_output_108_01_wtime.csv H:\\2526_LRIC_TEMP\\05-14-2026\\test.csv ";
+
+            start = new ProcessStartInfo();
+            start.FileName = "C:\\VS\\UL_PROCESSOR_2223\\UL_Processor_V2020\\Python310\\python.exe";
+            start.Arguments = string.Format("{0} {1}", cmd, args);
+            start.UseShellExecute = false;
+            start.RedirectStandardOutput = true;
+            //
+            /*
+            using (Process process = Process.Start(start))
+            {
+
+                using (StreamReader reader = process.StandardOutput)
+                {
+                    string result = reader.ReadToEnd();
+                    Console.Write(result);
+
+                    process.WaitForExit();
+                    Console.Write(result);
+                }
+            }
+         
+            
+            */
+
+            args = "H:\\07-16-2026\\038_LRIC_APPLETREE_2526_10_071626_AST_2min_large-v2_ALICE.csv --output H:\\07-16-2026\\MLU_DS_STARFISH_2526_10_071626.csv";// H:\\2526_TEMP\\05-04-2026\\SUBJECT_2\\SLP\\test.csv ";
+                                                                                                                                                                                   //H:\\2526_LRIC_TEMP\\05-14-2026\\108_01_AST_2min_large-v2_wtime.csv H:\\2526_LRIC_TEMP\\05-14-2026\\diarization_output_108_01_wtime.csv H:\\2526_LRIC_TEMP\\05-14-2026\\test.csv ";
+
+            start = new ProcessStartInfo();
+            start.FileName = "C:\\VS\\UL_PROCESSOR_2223\\UL_Processor_V2020\\Python310\\python.exe";
+            start.Arguments = string.Format("{0} {1}", cmd, args);
+            start.UseShellExecute = false;
+            start.RedirectStandardOutput = true;
+            //
+
+            /* using (Process process = Process.Start(start))
+             {
+
+                 using (StreamReader reader = process.StandardOutput)
+                 {
+                     string result = reader.ReadToEnd();
+                     Console.Write(result);
+
+                     process.WaitForExit();
+                     Console.Write(result);
+                 }
+             }
+            */
+
+
+            String szClassroomSettings = " MAP_PREFIX:Pandas_2526 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+
             String[] szClassroomsToProcess = {
-       "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:AppleTree_2526 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
-      "09/05/2025,10/24/2025,12-05-2025"+
-       szClassroomSettings};
+                   "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:Pandas_2526 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+                    "10/14/2025,11/14/2025,12/15/2025,02/05/2026,03/17/2026,04/23/2026"+
+                                 szClassroomSettings};
+
+
+            
 
             processUL(szClassroomsToProcess);
+
+
+            /*
+
+
+            String szClassroomSettings = " MAP_PREFIX:StarFish_2526 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+
+            String[] szClassroomsToProcess = {
+    "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:StarFish_2526 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:14 MINMAX:50 DAYS:" +
+    "05/04/2026,05/12/2026,05/19/2026"+
+    szClassroomSettings};*/
+
+
 
 
 
 
             /*
              * 
-             *  String szClassroomSettings = " MAP_PREFIX:APPLETREE_2526 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO"; 
-          String[]    szClassroomsToProcess = {
+             *  
+             *   
+             *   
+             *   
+             *     String szClassroomSettings = " MAP_PREFIX:Pandas_2526 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:Pandas_2526 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+                    "10/14/2025,11/14/2025,12/15/2025"+
+                                 szClassroomSettings};
+
+
+
+            processUL(szClassroomsToProcess);
+
+
+          String[]  szClassroomSettings = " MAP_PREFIX:BusyBees_2526 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:BusyBees_2526 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+                    "10/07/2025,11/04/2025,12/12/2025"+//10/07/2025"+//,11/04/2025,12/12/2025"+
+                                 szClassroomSettings};
+
+
+
+            processUL(szClassroomsToProcess); 
+             
+            
+            String szClassroomSettings = " MAP_PREFIX:Room8 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+
+             String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:Room8 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+                    "09/24/2025,10/29/2025,12/10/2025,01/21/2026,03/05/2026,04/10/2026"+//+
+                                 szClassroomSettings};
+
+            
+            String szClassroomSettings = " MAP_PREFIX:Room8_OUTSIDE REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+
+
+            String[] szClassroomsToProcess = {
+                   "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:Room8_OUTSIDE GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:12 MINMAX:50 DAYS:" +
+                    "09/24/2025,10/29/2025,12/10/2025"+ szClassroomSettings};
+
+            
+            
+          String szClassroomSettings = " MAP_PREFIX:APPLETREE_2526 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
+            String[] szClassroomsToProcess = {
        "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:AppleTree_2526 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
-      "09/05/2025,10/24/2025"+//,12-05-2025"+
+      "09/05/2025,10/24/2025,12-05-2025,01-15-2026"+
        szClassroomSettings};
+            processUL(szClassroomsToProcess);
+
+
+
              String szClassroomSettings = " MAP_PREFIX:BUBBLES_2526 REDENOISE:NO PROCESS:YES KALMAN:YES JUSTPLS:NO LABS:YES SEWIO:NO";
 
             String[] szClassroomsToProcess = {
        "DIR:C://IBSS//CLASSROOMS_2526// CLASSNAME:Bubbles_2526 GRMIN:0.2 GRMAX:2 HRMIN:8 HRMAX:13 MINMAX:50 DAYS:" +
-      "09/10/2025,10/22/2025,12-08-2025"+
+      "09/10/2025,10/22/2025,12-08-2025,01-14-2026"+
        szClassroomSettings};
+            
 
 
             processUL(szClassroomsToProcess);*/
 
 
-             
+
 
             Console.ReadLine();
            
@@ -198,7 +365,7 @@ namespace UL_Processor_V2023
                 classRoom.setBaseMappings();
                 WhisperSync ws = new WhisperSync();
                 if(!isToneDetection)
-                    ws.syncWhisper2223(classRoom);
+                    ws.syncWhisper2223(classRoom, "SF2223BEEPS.csv", "BEEPSANDTIMESV2");//
                 else
                     ws.syncWhisperTone(classRoom);
 
@@ -437,14 +604,15 @@ namespace UL_Processor_V2023
 
 
                     if (classRoom.kalman)
-                        classRoom.denoise();
+                       classRoom.denoise();
 
                     /* 5 Process */
+                    //
                     //classRoom.processUbi(true);//DELETE DEBUG
                     if (toProcess)
                     {
                         if (classRoom.kalman)
-                            classRoom.process(true, true);
+                            classRoom.process(true, true);// (false, false);// (true, true);//DEBUG CHANGE
                         else
                             classRoom.processUbi(true);
                     }
